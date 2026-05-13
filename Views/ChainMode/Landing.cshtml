@@ -1,0 +1,503 @@
+﻿@{
+    ViewData["Title"] = "Chain Mode";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .chain-landing {
+        min-height: 85vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        font-family: monospace;
+        padding: 4rem 3rem 4rem 5rem;
+        position: relative;
+        overflow: hidden;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+        /* Faint vertical line on left */
+        .chain-landing::before {
+            content: '';
+            position: fixed;
+            left: 5rem;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: rgba(0,229,255,0.06);
+            pointer-events: none;
+        }
+
+    /* ── Label ───────────────────────────────────────────────────── */
+    .chain-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.6rem;
+        text-transform: uppercase;
+        letter-spacing: 0.25em;
+        color: #00e5ff;
+        background: rgba(0,229,255,0.05);
+        border: 1px solid rgba(0,229,255,0.12);
+        border-radius: 4px;
+        padding: 4px 12px;
+        margin-bottom: 1.5rem;
+        width: fit-content;
+    }
+
+    /* ── Title block — left aligned ──────────────────────────────── */
+    .chain-title {
+        font-size: clamp(2.5rem, 7vw, 4.5rem);
+        font-weight: 700;
+        color: #fff;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin: 0 0 0.3rem 0;
+        line-height: 1;
+    }
+
+        .chain-title span {
+            color: #00e5ff;
+        }
+
+    .chain-tagline {
+        font-size: 0.8rem;
+        color: #445566;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        margin-bottom: 3rem;
+    }
+
+    /* ── Staircase chain ─────────────────────────────────────────── */
+    .chain-staircase {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        margin-bottom: 3rem;
+    }
+
+    .stair-row {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        position: relative;
+    }
+
+        /* Indent each row more than the last */
+        .stair-row:nth-child(1) {
+            margin-left: 0rem;
+        }
+
+        .stair-row:nth-child(2) {
+            margin-left: 3rem;
+        }
+
+        .stair-row:nth-child(3) {
+            margin-left: 6rem;
+        }
+
+        .stair-row:nth-child(4) {
+            margin-left: 9rem;
+        }
+
+        .stair-row:nth-child(5) {
+            margin-left: 12rem;
+        }
+
+    .stair-word {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #00e5ff;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        padding: 0.5rem 1rem;
+        background: rgba(0,229,255,0.05);
+        border: 1px solid rgba(0,229,255,0.15);
+        border-radius: 6px;
+        text-shadow: 0 0 12px rgba(0,229,255,0.25);
+        transition: border-color 0.2s;
+        white-space: nowrap;
+    }
+
+    .stair-row:hover .stair-word {
+        border-color: rgba(0,229,255,0.35);
+    }
+
+    /* Connecting arrow below each word */
+    .stair-connector {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        padding-left: 1.2rem;
+        margin-top: 0;
+    }
+
+    .stair-arrow {
+        font-size: 0.65rem;
+        color: rgba(0,229,255,0.25);
+        margin: 3px 0;
+        line-height: 1;
+    }
+
+    .stair-hint {
+        font-size: 0.6rem;
+        color: #334455;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        white-space: nowrap;
+    }
+
+        .stair-hint span {
+            color: rgba(0,229,255,0.5);
+        }
+
+    /* Vertical connecting line between rows */
+    .stair-line {
+        width: 1px;
+        height: 18px;
+        background: rgba(0,229,255,0.1);
+        margin-left: 1.5rem;
+    }
+
+    /* ── Bottom section: stats + rules in a row ──────────────────── */
+    .chain-bottom {
+        display: flex;
+        gap: 3rem;
+        align-items: flex-start;
+        margin-bottom: 3rem;
+        flex-wrap: wrap;
+    }
+
+    /* Stats list */
+    .chain-stats-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        min-width: 140px;
+    }
+
+    .chain-stats-title {
+        font-size: 0.6rem;
+        color: #334455;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        margin-bottom: 0.4rem;
+        border-bottom: 1px solid rgba(0,229,255,0.08);
+        padding-bottom: 0.4rem;
+    }
+
+    .chain-stat-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .chain-stat-label {
+        font-size: 0.7rem;
+        color: #445566;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+
+    .chain-stat-value {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #00e5ff;
+    }
+
+    /* Rules numbered list */
+    .chain-rules-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        flex: 1;
+        min-width: 220px;
+    }
+
+    .chain-rules-title {
+        font-size: 0.6rem;
+        color: #334455;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        margin-bottom: 0.4rem;
+        border-bottom: 1px solid rgba(0,229,255,0.08);
+        padding-bottom: 0.4rem;
+    }
+
+    .chain-rule-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .rule-num {
+        width: 20px;
+        height: 20px;
+        border: 1px solid rgba(0,229,255,0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.58rem;
+        color: #00e5ff;
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+
+    .rule-text {
+        font-size: 0.78rem;
+        color: #778899;
+        line-height: 1.5;
+    }
+
+        .rule-text span {
+            color: #00e5ff;
+        }
+
+    /* Timing row */
+    .chain-timing {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 2.5rem;
+    }
+
+    .timing-tag {
+        font-size: 0.62rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        padding: 4px 12px;
+        border-radius: 20px;
+    }
+
+    .t-perfect {
+        color: #00ff88;
+        background: rgba(0,255,136,0.06);
+        border: 1px solid rgba(0,255,136,0.2);
+    }
+
+    .t-good {
+        color: #ffd600;
+        background: rgba(255,214,0,0.06);
+        border: 1px solid rgba(255,214,0,0.2);
+    }
+
+    .t-late {
+        color: #ff6400;
+        background: rgba(255,100,0,0.06);
+        border: 1px solid rgba(255,100,0,0.2);
+    }
+
+    /* ── Buttons — left aligned ──────────────────────────────────── */
+    .chain-btns {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #00e5ff;
+        color: #000;
+        font-family: monospace;
+        font-size: 0.9rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        padding: 0.9rem 2.5rem;
+        border-radius: 6px;
+        text-decoration: none;
+        transition: box-shadow 0.2s, transform 0.2s;
+    }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 25px rgba(0,229,255,0.35);
+            transform: translateY(-2px);
+        }
+
+    .btn-ghost {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: transparent;
+        color: #00e5ff;
+        font-family: monospace;
+        font-size: 0.9rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        padding: 0.9rem 2.5rem;
+        border-radius: 6px;
+        border: 1px solid rgba(0,229,255,0.25);
+        text-decoration: none;
+        transition: border-color 0.2s;
+    }
+
+        .btn-ghost:hover {
+            border-color: rgba(0,229,255,0.5);
+        }
+
+    /* ── Responsive ──────────────────────────────────────────────── */
+    @@media (max-width: 600px) {
+        .chain-landing {
+            padding: 3rem 1.5rem 3rem 2rem;
+        }
+
+            .chain-landing::before {
+                left: 1.5rem;
+            }
+
+        .stair-row:nth-child(1) {
+            margin-left: 0rem;
+        }
+
+        .stair-row:nth-child(2) {
+            margin-left: 1rem;
+        }
+
+        .stair-row:nth-child(3) {
+            margin-left: 2rem;
+        }
+
+        .stair-row:nth-child(4) {
+            margin-left: 3rem;
+        }
+
+        .stair-row:nth-child(5) {
+            margin-left: 4rem;
+        }
+
+        .stair-word {
+            font-size: 0.9rem;
+        }
+
+        .chain-bottom {
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+    }
+</style>
+
+<div class="chain-landing">
+
+    <!-- Label -->
+    <div class="chain-label">⛓ Rhythm + Vocabulary Game</div>
+
+    <!-- Title -->
+    <h1 class="chain-title">Chain <span>Mode</span></h1>
+    <p class="chain-tagline">Link words. Keep the chain alive. Feel the beat.</p>
+
+    <!-- Staircase Visual -->
+    <div class="chain-staircase">
+
+        <div class="stair-row">
+            <div class="stair-word">APPLE</div>
+            <div class="stair-connector">
+                <div class="stair-hint">ends with <span>E</span></div>
+            </div>
+        </div>
+
+        <div class="stair-line"></div>
+
+        <div class="stair-row">
+            <div class="stair-word">ECHO</div>
+            <div class="stair-connector">
+                <div class="stair-hint">ends with <span>O</span></div>
+            </div>
+        </div>
+
+        <div class="stair-line" style="margin-left:4.2rem"></div>
+
+        <div class="stair-row">
+            <div class="stair-word">ORBIT</div>
+            <div class="stair-connector">
+                <div class="stair-hint">ends with <span>T</span></div>
+            </div>
+        </div>
+
+        <div class="stair-line" style="margin-left:7.4rem"></div>
+
+        <div class="stair-row">
+            <div class="stair-word">TRUST</div>
+            <div class="stair-connector">
+                <div class="stair-hint">ends with <span>T</span></div>
+            </div>
+        </div>
+
+        <div class="stair-line" style="margin-left:10.6rem"></div>
+
+        <div class="stair-row">
+            <div class="stair-word">TRAIL</div>
+            <div class="stair-connector">
+                <div class="stair-hint">ends with <span>L</span></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bottom: Stats + Rules -->
+    <div class="chain-bottom">
+
+        <!-- Stats -->
+        <div class="chain-stats-list">
+            <div class="chain-stats-title">Parameters</div>
+            <div class="chain-stat-row">
+                <div class="chain-stat-label">Lives</div>
+                <div class="chain-stat-value">3</div>
+            </div>
+            <div class="chain-stat-row">
+                <div class="chain-stat-label">Timing</div>
+                <div class="chain-stat-value">On Beat</div>
+            </div>
+            <div class="chain-stat-row">
+                <div class="chain-stat-label">BPM</div>
+                <div class="chain-stat-value">80→130</div>
+            </div>
+            <div class="chain-stat-row">
+                <div class="chain-stat-label">Words</div>
+                <div class="chain-stat-value">∞</div>
+            </div>
+        </div>
+
+        <!-- Rules -->
+        <div class="chain-rules-list">
+            <div class="chain-rules-title">How to Play</div>
+            <div class="chain-rule-item">
+                <div class="rule-num">1</div>
+                <div class="rule-text">A word appears — <span>type it exactly</span> and press Enter</div>
+            </div>
+            <div class="chain-rule-item">
+                <div class="rule-num">2</div>
+                <div class="rule-text">Next word must start with the <span>last letter</span> of the previous</div>
+            </div>
+            <div class="chain-rule-item">
+                <div class="rule-num">3</div>
+                <div class="rule-text">Press Enter <span>on the beat</span> for a PERFECT score</div>
+            </div>
+            <div class="chain-rule-item">
+                <div class="rule-num">4</div>
+                <div class="rule-text">Chain grows → beat <span>speeds up</span> → points multiply</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Timing tags -->
+    <div class="chain-timing">
+        <div class="timing-tag t-perfect">🎯 Perfect ±120ms</div>
+        <div class="timing-tag t-good">✅ Good ±280ms</div>
+        <div class="timing-tag t-late">⚡ Late</div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="chain-btns">
+        <a asp-action="Play" class="btn-primary">&#9658; Play Now</a>
+        <a asp-controller="Home" asp-action="Index" class="btn-ghost">&#9632; Home</a>
+    </div>
+
+</div>

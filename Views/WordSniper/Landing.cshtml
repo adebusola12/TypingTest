@@ -1,0 +1,389 @@
+﻿@{
+    ViewData["Title"] = "Word Sniper";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .sniper-landing {
+        min-height: 85vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-family: monospace;
+        padding: 3rem 1.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+        /* Subtle grid background */
+        .sniper-landing::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .sniper-landing > * {
+            position: relative;
+            z-index: 1;
+        }
+
+    /* ── Top label ───────────────────────────────────────────────── */
+    .sniper-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 0.25em;
+        color: #00e5ff;
+        background: rgba(0,229,255,0.06);
+        border: 1px solid rgba(0,229,255,0.15);
+        border-radius: 4px;
+        padding: 5px 14px;
+        margin-bottom: 2rem;
+    }
+
+    /* ── Title ───────────────────────────────────────────────────── */
+    .sniper-title {
+        font-size: clamp(3rem, 9vw, 5.5rem);
+        font-weight: 700;
+        color: #fff;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin: 0 0 0.25rem 0;
+        line-height: 1;
+    }
+
+        .sniper-title span {
+            color: #00e5ff;
+        }
+
+    .sniper-tagline {
+        font-size: 0.85rem;
+        color: #445566;
+        text-transform: uppercase;
+        letter-spacing: 0.25em;
+        margin-bottom: 2.5rem;
+    }
+
+    /* ── Word Demo Box ───────────────────────────────────────────── */
+    .sniper-demo {
+        width: 100%;
+        max-width: 520px;
+        position: relative;
+        margin-bottom: 2.5rem;
+    }
+
+    /* Corner brackets */
+    .demo-box {
+        padding: 2.5rem 2rem;
+        background: rgba(0,229,255,0.03);
+        border: 1px solid rgba(0,229,255,0.12);
+        border-radius: 4px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.2rem;
+    }
+
+        /* Animated corner accents */
+        .demo-box::before,
+        .demo-box::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-color: rgba(0,229,255,0.4);
+            border-style: solid;
+        }
+
+        .demo-box::before {
+            top: 8px;
+            left: 8px;
+            border-width: 2px 0 0 2px;
+        }
+
+        .demo-box::after {
+            bottom: 8px;
+            right: 8px;
+            border-width: 0 2px 2px 0;
+        }
+
+    /* The flashing word */
+    .demo-word {
+        font-size: clamp(2.5rem, 7vw, 4rem);
+        font-weight: 700;
+        color: #00e5ff;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        text-shadow: 0 0 20px rgba(0,229,255,0.5), 0 0 40px rgba(0,229,255,0.2);
+        animation: wordFlash 3s ease-in-out infinite;
+    }
+
+    @@keyframes wordFlash {
+        0% {
+            opacity: 0;
+            transform: scale(0.85);
+        }
+
+        15% {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        70% {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        90% {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+
+        100% {
+            opacity: 0;
+            transform: scale(0.85);
+        }
+    }
+
+    /* Timer bar inside demo */
+    .demo-timer-track {
+        width: 100%;
+        height: 2px;
+        background: rgba(0,229,255,0.08);
+        border-radius: 1px;
+        overflow: hidden;
+    }
+
+    .demo-timer-fill {
+        height: 100%;
+        background: #00e5ff;
+        box-shadow: 0 0 8px rgba(0,229,255,0.5);
+        animation: timerDrain 3s ease-in-out infinite;
+        transform-origin: left;
+    }
+
+    @@keyframes timerDrain {
+        0% {
+            width: 100%;
+            background: #00e5ff;
+        }
+
+        70% {
+            width: 20%;
+            background: #ffd600;
+        }
+
+        90% {
+            width: 0%;
+            background: #ff4466;
+        }
+
+        100% {
+            width: 100%;
+            background: #00e5ff;
+        }
+    }
+
+    .demo-hint {
+        font-size: 0.65rem;
+        color: #334455;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+    }
+
+    /* ── Inline stats ────────────────────────────────────────────── */
+    .sniper-stats {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        margin-bottom: 2.5rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .sniper-stat {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+    }
+
+    .sniper-stat-val {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #00e5ff;
+    }
+
+    .sniper-stat-lbl {
+        font-size: 0.58rem;
+        color: #334455;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+    }
+
+    .stat-divider {
+        width: 1px;
+        height: 30px;
+        background: rgba(0,229,255,0.1);
+    }
+
+    /* ── Rule chips ──────────────────────────────────────────────── */
+    .sniper-rules {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+        max-width: 520px;
+        margin-bottom: 2.5rem;
+    }
+
+    .sniper-rule {
+        font-size: 0.7rem;
+        color: #778899;
+        padding: 6px 14px;
+        background: rgba(0,229,255,0.03);
+        border: 1px solid rgba(0,229,255,0.08);
+        border-radius: 20px;
+    }
+
+        .sniper-rule span {
+            color: #00e5ff;
+        }
+
+    /* ── Buttons ─────────────────────────────────────────────────── */
+    .sniper-btns {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #00e5ff;
+        color: #000;
+        font-family: monospace;
+        font-size: 0.9rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        padding: 0.9rem 2.5rem;
+        border-radius: 6px;
+        text-decoration: none;
+        transition: box-shadow 0.2s, transform 0.2s;
+    }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 25px rgba(0,229,255,0.35);
+            transform: translateY(-2px);
+        }
+
+    .btn-ghost {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: transparent;
+        color: #00e5ff;
+        font-family: monospace;
+        font-size: 0.9rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        padding: 0.9rem 2.5rem;
+        border-radius: 6px;
+        border: 1px solid rgba(0,229,255,0.25);
+        text-decoration: none;
+        transition: border-color 0.2s;
+    }
+
+        .btn-ghost:hover {
+            border-color: rgba(0,229,255,0.5);
+        }
+
+    @@media (max-width: 500px) {
+        .stat-divider {
+            display: none;
+        }
+    }
+</style>
+
+<div class="sniper-landing">
+
+    <!-- Top Label -->
+    <div class="sniper-label">◎ Reaction Typing Game</div>
+
+    <!-- Title -->
+    <h1 class="sniper-title">Word <span>Sniper</span></h1>
+    <p class="sniper-tagline">Type it. Before it's gone.</p>
+
+    <!-- Word Demo Box -->
+    <div class="sniper-demo">
+        <div class="demo-box">
+            <div class="demo-hint">word flashing on screen</div>
+            <div class="demo-word" id="demo-word">SWIFT</div>
+            <div class="demo-timer-track">
+                <div class="demo-timer-fill"></div>
+            </div>
+            <div class="demo-hint">type before the bar runs out</div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="sniper-stats">
+        <div class="sniper-stat">
+            <div class="sniper-stat-val">3</div>
+            <div class="sniper-stat-lbl">Lives</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="sniper-stat">
+            <div class="sniper-stat-val">1–2s</div>
+            <div class="sniper-stat-lbl">Flash Time</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="sniper-stat">
+            <div class="sniper-stat-val">3x</div>
+            <div class="sniper-stat-lbl">Difficulty</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="sniper-stat">
+            <div class="sniper-stat-val">∞</div>
+            <div class="sniper-stat-lbl">Rounds</div>
+        </div>
+    </div>
+
+    <!-- Rules -->
+    <div class="sniper-rules">
+        <div class="sniper-rule"><span>01</span> — Word flashes on screen</div>
+        <div class="sniper-rule"><span>02</span> — Type before it vanishes</div>
+        <div class="sniper-rule"><span>03</span> — Faster = more points</div>
+        <div class="sniper-rule"><span>04</span> — Miss 3 = game over</div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="sniper-btns">
+        <a asp-action="Play" class="btn-primary">&#9658; Play Now</a>
+        <a asp-controller="Home" asp-action="Index" class="btn-ghost">&#9632; Home</a>
+    </div>
+
+</div>
+
+<!-- Cycle through demo words -->
+<script>
+    const demoWords = ['SWIFT', 'BLAZE', 'TRACK', 'FORGE', 'NIGHT', 'CRISP'];
+    let demoIndex = 0;
+    setInterval(() => {
+        demoIndex = (demoIndex + 1) % demoWords.length;
+        document.getElementById('demo-word').textContent = demoWords[demoIndex];
+    }, 3000);
+</script>

@@ -1,0 +1,919 @@
+﻿@{
+    ViewData["Title"] = "Word Sniper";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    /* ── Full screen tactical feel ───────────────────────────────────────── */
+    * {
+        box-sizing: border-box;
+    }
+
+    .sniper-wrap {
+        position: fixed;
+        inset: 0;
+        top: 56px; /* below navbar */
+        background: #0a0a1a;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-family: monospace;
+        overflow: hidden;
+    }
+
+        /* Scanline overlay */
+        .sniper-wrap::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient( 0deg, transparent, transparent 2px, rgba(0, 229, 255, 0.015) 2px, rgba(0, 229, 255, 0.015) 4px );
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Corner brackets — tactical UI feel */
+        .sniper-wrap::after {
+            content: '';
+            position: fixed;
+            inset: 60px 20px 20px;
+            border: 1px solid rgba(0, 229, 255, 0.08);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+    /* ── HUD ─────────────────────────────────────────────────────────────── */
+    .sniper-hud {
+        position: fixed;
+        top: 64px;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 2rem;
+        background: rgba(8, 11, 15, 0.9);
+        border-bottom: 1px solid rgba(0, 229, 255, 0.15);
+        z-index: 10;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        color: #556677;
+    }
+
+    .hud-group {
+        display: flex;
+        gap: 2rem;
+        align-items: center;
+    }
+
+    .hud-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+    }
+
+    .hud-label {
+        font-size: 0.6rem;
+        color: #334455;
+        letter-spacing: 0.2em;
+    }
+
+    .hud-value {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #00e5ff;
+    }
+
+    /* ── Lives — ammo style ──────────────────────────────────────────────── */
+    .sniper-lives {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+
+    .sniper-life {
+        width: 8px;
+        height: 20px;
+        background: #00e5ff;
+        border-radius: 2px;
+        transition: all 0.3s;
+        box-shadow: 0 0 6px rgba(0, 229, 255, 0.4);
+    }
+
+        .sniper-life.lost {
+            background: #1a0a0a;
+            box-shadow: none;
+        }
+
+    /* ── Arena — scope ring ──────────────────────────────────────────────── */
+    .sniper-arena {
+        position: relative;
+        width: 340px;
+        height: 340px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1;
+    }
+
+    /* Outer scope ring */
+    .scope-ring {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: 2px solid rgba(0, 229, 255, 0.25);
+        box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.08), inset 0 0 60px rgba(0, 229, 255, 0.04);
+    }
+
+        /* Crosshair lines */
+        .scope-ring::before,
+        .scope-ring::after {
+            content: '';
+            position: absolute;
+            background: rgba(0, 229, 255, 0.2);
+        }
+
+        .scope-ring::before {
+            width: 1px;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+        }
+
+        .scope-ring::after {
+            height: 1px;
+            left: 0;
+            right: 0;
+            top: 50%;
+        }
+
+    /* Rotating outer dashes */
+    .scope-rotate {
+        position: absolute;
+        inset: -12px;
+        border-radius: 50%;
+        border: 1px dashed rgba(0, 229, 255, 0.12);
+        animation: scopeSpin 20s linear infinite;
+    }
+
+    @@keyframes scopeSpin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Corner ticks */
+    .scope-ticks {
+        position: absolute;
+        inset: 20px;
+        border-radius: 50%;
+    }
+
+        .scope-ticks::before,
+        .scope-ticks::after {
+            content: '';
+            position: absolute;
+            background: rgba(0, 229, 255, 0.35);
+        }
+
+        .scope-ticks::before {
+            width: 12px;
+            height: 1px;
+            top: 50%;
+            left: -16px;
+        }
+
+        .scope-ticks::after {
+            width: 12px;
+            height: 1px;
+            top: 50%;
+            right: -16px;
+        }
+
+    /* ── Word display ────────────────────────────────────────────────────── */
+    .sniper-word {
+        font-size: clamp(1.8rem, 5vw, 2.8rem);
+        font-weight: 700;
+        color: #00e5ff;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        text-align: center;
+        user-select: none;
+        text-shadow: 0 0 20px rgba(0, 229, 255, 0.6), 0 0 40px rgba(0, 229, 255, 0.2);
+        transition: opacity 0.15s, transform 0.15s;
+        position: relative;
+        z-index: 2;
+    }
+
+        .sniper-word.hidden {
+            opacity: 0;
+            transform: scale(0.85);
+        }
+
+        .sniper-word.pop-in {
+            animation: wordPopIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+    @@keyframes wordPopIn {
+        0% {
+            transform: scale(0.6);
+            opacity: 0;
+        }
+
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    /* ── Timer ring ──────────────────────────────────────────────────────── */
+    .timer-ring-container {
+        position: absolute;
+        inset: 8px;
+        border-radius: 50%;
+    }
+
+    .timer-ring-svg {
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg);
+    }
+
+    .timer-ring-track {
+        fill: none;
+        stroke: rgba(0, 229, 255, 0.08);
+        stroke-width: 2;
+    }
+
+    .timer-ring-fill {
+        fill: none;
+        stroke: #00e5ff;
+        stroke-width: 2;
+        stroke-linecap: round;
+        transition: stroke-dashoffset linear, stroke 0.3s;
+        filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.6));
+    }
+
+    /* ── Flash effect on miss ────────────────────────────────────────────── */
+    .sniper-wrap.flash-miss {
+        animation: flashMiss 0.3s ease-out;
+    }
+
+    @@keyframes flashMiss {
+        0% {
+            background: #0d1520;
+        }
+
+        100% {
+            background: #0a0a1a;
+        }
+    }
+
+    /* ── Feedback ────────────────────────────────────────────────────────── */
+    .sniper-feedback {
+        position: absolute;
+        top: -2.5rem;
+        font-size: 1rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        opacity: 0;
+        transition: opacity 0.2s;
+        pointer-events: none;
+        z-index: 3;
+    }
+
+        .sniper-feedback.show {
+            opacity: 1;
+        }
+
+        .sniper-feedback.hit {
+            color: #00ff88;
+            text-shadow: 0 0 10px rgba(0,255,136,0.5);
+        }
+
+        .sniper-feedback.miss {
+            color: #00e5ff;
+            text-shadow: 0 0 10px rgba(255,58,58,0.5);
+        }
+
+    /* ── Difficulty badge ────────────────────────────────────────────────── */
+    .difficulty-badge {
+        position: absolute;
+        bottom: -2rem;
+        font-size: 0.65rem;
+        color: #334455;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+    }
+
+    /* ── Input ───────────────────────────────────────────────────────────── */
+    .sniper-input-wrap {
+        position: relative;
+        margin-top: 2.5rem;
+        z-index: 1;
+    }
+
+        .sniper-input-wrap::before {
+            content: '>';
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #00e5ff;
+            font-size: 1rem;
+            opacity: 0.6;
+        }
+
+    .sniper-input {
+        background: rgba(0, 229, 255, 0.04);
+        border: 1px solid rgba(0, 229, 255, 0.2);
+        border-radius: 4px;
+        color: #00e5ff;
+        font-family: monospace;
+        font-size: 1.3rem;
+        text-align: center;
+        padding: 0.7rem 1.5rem 0.7rem 2.5rem;
+        width: 320px;
+        outline: none;
+        letter-spacing: 0.12em;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        caret-color: #00e5ff;
+    }
+
+        .sniper-input:focus {
+            border-color: rgba(0, 229, 255, 0.5);
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.1);
+        }
+
+        .sniper-input.correct {
+            border-color: #00ff88;
+            color: #00ff88;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.15);
+        }
+
+        .sniper-input.wrong {
+            border-color: rgba(0, 229, 255, 0.7);
+            color: #00e5ff;
+        }
+
+    /* ── Mute button ─────────────────────────────────────────────────────── */
+    #mute-btn {
+        background: none;
+        border: 1px solid rgba(0, 229, 255, 0.2);
+        border-radius: 4px;
+        color: #556677;
+        font-family: monospace;
+        font-size: 0.75rem;
+        padding: 0.25rem 0.6rem;
+        cursor: pointer;
+        letter-spacing: 0.05em;
+        transition: border-color 0.2s;
+    }
+
+        #mute-btn:hover {
+            border-color: rgba(0, 229, 255, 0.5);
+        }
+
+    /* ── Game Over ───────────────────────────────────────────────────────── */
+    .sniper-gameover {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        text-align: center;
+        z-index: 20;
+        position: fixed; 
+        inset: 0;
+        background: #0a0a1a; 
+        justify-content: center; 
+        padding: 2rem; 
+        overflow-y: auto;
+    }
+
+        .sniper-gameover h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #00e5ff;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin: 0;
+            text-shadow: 0 0 30px rgba(0, 229, 255, 0.4);
+        }
+
+
+    /* ── High Score Banner ───────────────────────────────────────── */
+    .hs-banner {
+        width: 100%;
+        max-width: 480px;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        flex-direction: column;
+        gap: 4px;
+        text-align: center;
+    }
+
+    .hs-new {
+        background: rgba(255,214,0,0.06);
+        border: 1px solid rgba(255,214,0,0.3);
+        animation: hsPulse 1s ease-in-out infinite alternate;
+    }
+
+    .hs-existing {
+        background: rgba(0,229,255,0.04);
+        border: 1px solid rgba(0,229,255,0.12);
+    }
+
+    @@keyframes hsPulse {
+        from {
+            box-shadow: 0 0 8px rgba(255,214,0,0.1);
+        }
+
+        to {
+            box-shadow: 0 0 20px rgba(255,214,0,0.3);
+        }
+    }
+
+    .hs-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #ffd600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+
+    .hs-existing .hs-title {
+        color: #00e5ff;
+    }
+
+    .hs-sub {
+        font-size: 0.7rem;
+        color: #556677;
+        letter-spacing: 0.05em;
+    }
+
+    .stat-grid {
+        display: flex;
+        gap: 1px;
+        background: rgba(0, 229, 255, 0.1);
+        border-radius: 8px;
+        overflow: hidden;
+        width: 100%;
+        max-width: 480px;
+        border: 1px solid rgba(0, 229, 255, 0.15);
+    }
+
+    .stat-cell {
+        flex: 1;
+        background: #0d1520;
+        padding: 1.25rem 1rem;
+    }
+
+    .stat-val {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #00e5ff;
+    }
+
+    .stat-lbl {
+        font-size: 0.65rem;
+        color: #445566;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        margin-top: 4px;
+    }
+
+    .sniper-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #00e5ff;
+        color: #000;
+        font-family: monospace;
+        font-size: 0.9rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        padding: 0.9rem 2.5rem;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+    }
+
+    .sniper-btn-ghost {
+        background: transparent;
+        color: #00e5ff;
+        border: 1px solid rgba(0, 229, 255, 0.4);
+        box-shadow: none;
+    }
+</style>
+
+<div class="sniper-wrap" id="sniper-wrap">
+
+    <!-- HUD -->
+    <div class="sniper-hud">
+        <div class="hud-group">
+            <div class="hud-item">
+                <div class="hud-label">Score</div>
+                <div class="hud-value" id="hud-score">0</div>
+            </div>
+            <div class="hud-item">
+                <div class="hud-label">WPM</div>
+                <div class="hud-value" id="hud-wpm">0</div>
+            </div>
+            <div class="hud-item">
+                <div class="hud-label">Streak</div>
+                <div class="hud-value" id="hud-streak">0</div>
+            </div>
+        </div>
+
+        <div class="sniper-lives" id="lives-display"></div>
+
+        <button id="mute-btn" onclick="toggleMute()">🔊</button>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" style="display:flex; flex-direction:column; align-items:center;">
+
+        <!-- Scope arena -->
+        <div class="sniper-arena">
+            <div class="scope-rotate"></div>
+            <div class="scope-ring">
+                <div class="scope-ticks"></div>
+            </div>
+
+            <!-- Timer ring SVG -->
+            <div class="timer-ring-container">
+                <svg class="timer-ring-svg" viewBox="0 0 300 300">
+                    <circle class="timer-ring-track" cx="150" cy="150" r="140" />
+                    <circle class="timer-ring-fill" id="timer-ring" cx="150" cy="150" r="140"
+                            stroke-dasharray="879.6"
+                            stroke-dashoffset="0" />
+                </svg>
+            </div>
+
+            <div class="sniper-word hidden" id="word-display"></div>
+            <div class="sniper-feedback" id="feedback"></div>
+            <div class="difficulty-badge" id="difficulty-badge">easy</div>
+        </div>
+
+        <!-- Input -->
+        <div class="sniper-input-wrap">
+            <input class="sniper-input"
+                   id="sniper-input"
+                   type="text"
+                   autocomplete="off"
+                   autocorrect="off"
+                   autocapitalize="off"
+                   spellcheck="false"
+                   placeholder="AIM AND TYPE" />
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div class="sniper-gameover" id="gameover-screen">
+        <h2>💀 Target Lost</h2>
+        <div class="stat-grid">
+            <div class="stat-cell">
+                <div class="stat-val" id="go-score">0</div>
+                <div class="stat-lbl">Score</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-val" id="go-wpm">0</div>
+                <div class="stat-lbl">Best WPM</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-val" id="go-streak">0</div>
+                <div class="stat-lbl">Best Streak</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-val" id="go-words">0</div>
+                <div class="stat-lbl">Targets Hit</div>
+            </div>
+        </div>
+
+        <!-- High Score Banner -->
+        <div id="highscore-banner" class="hs-banner" style="display:none;">
+            <div id="hs-title" class="hs-title"></div>
+            <div id="hs-sub" class="hs-sub"></div>
+        </div>
+
+        <div style="display:flex; gap:1rem; flex-wrap:wrap; justify-content:center;">
+            <button class="sniper-btn" onclick="restartGame()">&#9658; Try Again</button>
+            <a class="sniper-btn sniper-btn-ghost" asp-action="Index">&#9632; Menu</a>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script src="~/js/sniper-audio.js"></script>
+    <script>
+        const WORDS = {
+            easy:   ["the","and","for","are","but","not","you","all","can","her","was","one","our","out","day","get","has","him","his","how","man","new","now","old","see","two","way","who","boy","did","its","let","put","say","she","too","use"],
+            medium: ["about","above","after","again","along","among","being","below","bring","build","carry","catch","cause","clean","clear","close","color","could","count","cover","cross","doing","drink","drive","eight","every","field","fight","first","floor","found","front","given","glass","going","grown","guard","happy","heard","heart","heavy","horse","house","human","often","order","other","peace","phone","place","plain","plant","point","power","press","price","print","prove","quick","reach","ready","river","round","ruler","since","sleep","small","smart","space","stand","start","state","still","stone","store","storm","story","study","sugar","sweet","sword","table","taken","think","third","those","three","threw","touch","trail","train","trust","truth","under","until","using","value","voice","water","where","which","while","white","whole","whose","woman","words","world","would","write","young","yours"],
+            hard:   ["ability","absence","account","achieve","acquire","address","advance","against","already","analyze","ancient","another","applied","approve","attempt","balance","because","benefit","between","bizarre","capable","captain","careful","century","certain","chapter","climate","comfort","command","compare","complex","concept","concern","confirm","connect","control","correct","courage","culture","current","decided","declare","defined","deliver","despite","digital","discuss","display","distant","diverse","dynamic","economy","edition","effects","emotion","enforce","enhance","examine","example","execute","explore","extreme","factors","failure","feature","focused","foreign","freedom","further","general","genuine","history","however","hundred","imagine","improve","include","initial","inspire","instead","intense","involve","justice","kingdom","language","largest","lasting","leading","learned","liberty","machine","massive","measure","message","million","minimum","mission","mixture","morning","natural","network","nothing","obvious","outside","pattern","perfect","perform","perhaps","picture","popular","process","produce","program","project","provide","purpose","quality","quarter","quickly","realize","receive","replace","request","require","resolve","restore","results","returns","section","service","session","setting","similar","society","someone","special","station","strange","student","subject","success","surface","survive","systems","teacher","through","tonight","totally","tourism","towards","undergo","unknown","upgrade","venture","version","village","virtual","visible","waiting","without","working","writing","younger"]
+        };
+
+        const MAX_LIVES = 3;
+        const RING_CIRCUMFERENCE = 879.6;
+
+        let lives, score, streak, bestStreak, wordsHit, bestWpm;
+        let currentWord, wordShownAt, flashDuration;
+        let wordTimer, hideTimer, ringFrame;
+        let totalCharsTyped, totalTimeMs;
+        let gameActive;
+
+        function toggleMute() {
+            const muted = SniperAudio.toggleMute();
+            document.getElementById('mute-btn').textContent = muted ? '🔇' : '🔊';
+        }
+
+        function getPool(streak) {
+            if (streak >= 15) return WORDS.hard;
+            if (streak >= 7)  return WORDS.medium;
+            return WORDS.easy;
+        }
+
+        function getDiffLabel(streak) {
+            if (streak >= 15) return 'hard';
+            if (streak >= 7)  return 'medium';
+            return 'easy';
+        }
+
+        function getFlashDuration(streak) {
+            const reduction = Math.floor(streak / 5) * 150;
+            return Math.max(800, 3000 - reduction);
+        }
+
+        function randomWord(pool) {
+            return pool[Math.floor(Math.random() * pool.length)];
+        }
+
+        function initLives() {
+            const el = document.getElementById('lives-display');
+            el.innerHTML = '';
+            for (let i = 0; i < MAX_LIVES; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'sniper-life';
+                dot.id = 'life-' + i;
+                el.appendChild(dot);
+            }
+        }
+
+        function updateLives() {
+            for (let i = 0; i < MAX_LIVES; i++) {
+                document.getElementById('life-' + i)
+                        .classList.toggle('lost', i >= lives);
+            }
+        }
+
+        function updateHud() {
+            document.getElementById('hud-score').textContent  = score;
+            document.getElementById('hud-streak').textContent = streak;
+            const wpm = totalTimeMs > 0
+                ? Math.round((totalCharsTyped / 5) / (totalTimeMs / 60000)) : 0;
+            if (wpm > bestWpm) bestWpm = wpm;
+            document.getElementById('hud-wpm').textContent = wpm;
+        }
+
+        function showFeedback(type, text) {
+            const el = document.getElementById('feedback');
+            el.textContent = text;
+            el.className = 'sniper-feedback show ' + type;
+            setTimeout(() => el.classList.remove('show'), 700);
+        }
+
+        // ── Timer ring animation ──────────────────────────────────────────────
+        function startTimerRing(duration) {
+            cancelAnimationFrame(ringFrame);
+            const ring  = document.getElementById('timer-ring');
+            const start = performance.now();
+
+            function animate(now) {
+                const elapsed   = now - start;
+                const remaining = Math.max(0, 1 - elapsed / duration);
+                const offset    = RING_CIRCUMFERENCE * (1 - remaining);
+                ring.style.strokeDashoffset = offset;
+
+                // Color shift
+                if (remaining > 0.5)      ring.style.stroke = '#00e5ff';
+                else if (remaining > 0.25) ring.style.stroke = '#ffd600';
+                else                       ring.style.stroke = '#ff4466';
+
+                if (remaining > 0 && gameActive) {
+                    ringFrame = requestAnimationFrame(animate);
+                }
+            }
+            ringFrame = requestAnimationFrame(animate);
+        }
+
+        function nextWord() {
+            if (!gameActive) return;
+            clearTimeout(wordTimer);
+            clearTimeout(hideTimer);
+            cancelAnimationFrame(ringFrame);
+
+            const pool = getPool(streak);
+            currentWord   = randomWord(pool);
+            flashDuration = getFlashDuration(streak);
+
+            const display = document.getElementById('word-display');
+            display.textContent = currentWord;
+            display.classList.remove('hidden', 'pop-in');
+            void display.offsetWidth;
+            display.classList.add('pop-in');
+            wordShownAt = performance.now();
+
+            document.getElementById('difficulty-badge').textContent =
+                getDiffLabel(streak);
+
+            // Reset ring
+            document.getElementById('timer-ring').style.strokeDashoffset = 0;
+            startTimerRing(flashDuration);
+
+            hideTimer = setTimeout(() => {
+                display.classList.add('hidden');
+                wordTimer = setTimeout(() => {
+                    if (gameActive) missWord();
+                }, 400);
+            }, flashDuration);
+        }
+
+        function missWord() {
+            lives--;
+            streak = 0;
+            updateLives();
+            showFeedback('miss', '✗ MISS');
+            document.getElementById('sniper-input').value = '';
+
+            // Flash screen red
+            const wrap = document.getElementById('sniper-wrap');
+            wrap.classList.remove('flash-miss');
+            void wrap.offsetWidth;
+            wrap.classList.add('flash-miss');
+
+            SniperAudio.playMiss();
+            SniperAudio.updateBpm(streak);
+
+            if (lives <= 0) {
+                endGame();
+            } else {
+                setTimeout(nextWord, 900);
+            }
+        }
+
+                function endGame() {
+            gameActive = false;
+            clearTimeout(wordTimer);
+            clearTimeout(hideTimer);
+            cancelAnimationFrame(ringFrame);
+
+            SniperAudio.stop();
+            SniperAudio.playGameOver();
+
+            document.getElementById('game-screen').style.display    = 'none';
+            document.getElementById('gameover-screen').style.display = 'flex';
+            document.getElementById('go-score').textContent   = score;
+            document.getElementById('go-wpm').textContent     = bestWpm;
+            document.getElementById('go-streak').textContent  = bestStreak;
+            document.getElementById('go-words').textContent   = wordsHit;
+
+            // Hide banner until score loads
+            document.getElementById('highscore-banner').style.display = 'none';
+
+            saveScore();  // ← saves AND shows high score banner
+        }
+
+                async function saveScore() {
+            try {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+
+                const res  = await fetch('/WordSniper/SaveScore', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify({
+                        score:      score,
+                        bestStreak: bestStreak,
+                        wordsHit:   wordsHit,
+                        bestWpm:    bestWpm
+                    })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    showHighScoreBanner(data.isNewHighScore, data.previousBest, data.currentScore);
+                }
+            } catch {
+                console.warn('Score save failed');
+            }
+        }
+
+        function showHighScoreBanner(isNew, previousBest, currentScore) {
+            const banner = document.getElementById('highscore-banner');
+            const title  = document.getElementById('hs-title');
+            const sub    = document.getElementById('hs-sub');
+
+            if (isNew) {
+                banner.className = 'hs-banner hs-new';
+                title.textContent = '🏆 New High Score!';
+                sub.textContent   = previousBest > 0
+                    ? `Previous best was ${previousBest.toLocaleString()} — you beat it!`
+                    : 'Your first score is on the board!';
+            } else if (previousBest > 0) {
+                banner.className = 'hs-banner hs-existing';
+                title.textContent = `🏆 Best: ${previousBest.toLocaleString()} pts`;
+                sub.textContent   = `You need ${(previousBest - currentScore + 1).toLocaleString()} more to beat your record`;
+            } else {
+                banner.className = 'hs-banner hs-existing';
+                title.textContent = '🏆 Score Saved!';
+                sub.textContent   = 'Play again to set a record';
+            }
+
+            banner.style.display = 'flex';
+        }
+
+        function startGame() {
+            lives           = MAX_LIVES;
+            score           = 0;
+            streak          = 0;
+            bestStreak      = 0;
+            wordsHit        = 0;
+            bestWpm         = 0;
+            totalCharsTyped = 0;
+            totalTimeMs     = 0;
+            gameActive      = true;
+
+            document.getElementById('game-screen').style.display    = 'flex';
+            document.getElementById('gameover-screen').style.display = 'none';
+            document.getElementById('sniper-input').value           = '';
+
+            initLives();
+            updateHud();
+
+            SniperAudio.playStart();
+            SniperAudio.start(0);
+
+            setTimeout(nextWord, 800);
+            document.getElementById('sniper-input').focus();
+        }
+
+        function restartGame() { startGame(); }
+
+        document.getElementById('sniper-input').addEventListener('input', function () {
+            if (!gameActive || !currentWord) return;
+
+            const typed  = this.value.trim().toLowerCase();
+            const target = currentWord.toLowerCase();
+
+            if (target.startsWith(typed)) {
+                this.className = 'sniper-input';
+            } else {
+                this.className = 'sniper-input wrong';
+            }
+
+            if (typed === target) {
+                const reactionMs = performance.now() - wordShownAt;
+                const visibleMs  = Math.min(reactionMs, flashDuration);
+                totalCharsTyped += currentWord.length;
+                totalTimeMs     += visibleMs;
+
+                const speedBonus  = Math.max(0, Math.floor((flashDuration - reactionMs) / 100));
+                const streakBonus = streak * 2;
+                const basePoints  = currentWord.length * 10;
+                const gained      = basePoints + streakBonus + speedBonus;
+
+                score += gained;
+                streak++;
+                wordsHit++;
+                if (streak > bestStreak) bestStreak = streak;
+
+                SniperAudio.playHit();
+                SniperAudio.updateBpm(streak);
+
+                this.className = 'sniper-input correct';
+                showFeedback('hit', `✓ +${gained}`);
+
+                clearTimeout(wordTimer);
+                clearTimeout(hideTimer);
+                cancelAnimationFrame(ringFrame);
+                document.getElementById('word-display').classList.add('hidden');
+
+                updateHud();
+                this.value     = '';
+                this.className = 'sniper-input';
+
+                setTimeout(nextWord, 400);
+            }
+        });
+
+        startGame();
+    </script>
+}

@@ -1,0 +1,382 @@
+﻿@model TypingTest.ViewModels.TestResultViewModel
+@{
+    ViewData["Title"] = "Results";
+}
+
+@section Styles {
+    <style>
+        .results-page {
+            max-width: 700px;
+            margin: 3rem auto;
+            text-align: center;
+        }
+
+        .result-header {
+            margin-bottom: 2.5rem;
+            opacity: 0;
+            animation: fadeUp 0.5s ease 0.1s forwards;
+        }
+
+        .result-crown {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-title {
+            font-family: var(--font-display);
+            font-size: 1.75rem;
+            font-weight: 900;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .wpm-hero {
+            background: var(--surface);
+            border: 1px solid var(--accent);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--glow-accent);
+            opacity: 0;
+            animation: fadeUp 0.5s ease 0.3s forwards;
+        }
+
+        .wpm-number {
+            font-family: var(--font-display);
+            font-size: 6rem;
+            font-weight: 900;
+            color: var(--accent);
+            line-height: 1;
+            text-shadow: 0 0 40px rgba(0,212,255,0.5);
+            animation: countUp 1s ease 0.5s both;
+        }
+
+        .wpm-unit {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            letter-spacing: 4px;
+            color: var(--text3);
+            text-transform: uppercase;
+            margin-top: 0.5rem;
+        }
+
+        .result-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            opacity: 0;
+            animation: fadeUp 0.5s ease 0.5s forwards;
+        }
+
+        .result-stat {
+            background: var(--surface);
+            padding: 1.25rem;
+        }
+
+        .result-stat-val {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--text);
+            margin-bottom: 0.25rem;
+        }
+
+        .result-stat-lbl {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text3);
+        }
+
+        .result-meta {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: fadeUp 0.5s ease 0.6s forwards;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: fadeUp 0.5s ease 0.7s forwards;
+        }
+
+        /* ── Warm-up prompt ── */
+        .warmup-prompt {
+            background: rgba(250, 204, 21, 0.04);
+            border: 1px solid rgba(250, 204, 21, 0.3);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem 1.75rem;
+            margin-bottom: 1.5rem;
+            opacity: 0;
+            animation: fadeUp 0.5s ease 0.25s forwards;
+            text-align: left;
+        }
+
+        .warmup-prompt-header {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 0.6rem;
+        }
+
+        .warmup-prompt-icon {
+            font-size: 1.4rem;
+        }
+
+        .warmup-prompt-title {
+            font-family: var(--font-display);
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #facc15;
+            text-transform: uppercase;
+        }
+
+        .warmup-prompt-body {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text2);
+            line-height: 1.7;
+            margin-bottom: 1rem;
+        }
+
+            .warmup-prompt-body strong {
+                color: #facc15;
+            }
+
+        .warmup-prompt-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-warmup {
+            padding: 0.6rem 1.4rem;
+            background: rgba(250,204,21,0.1);
+            border: 1px solid rgba(250,204,21,0.5);
+            border-radius: var(--radius-md);
+            color: #facc15;
+            font-family: var(--font-display);
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+
+            .btn-warmup:hover {
+                background: rgba(250,204,21,0.18);
+                border-color: #facc15;
+                color: #facc15;
+                text-decoration: none;
+                box-shadow: 0 0 16px rgba(250,204,21,0.2);
+            }
+
+        .btn-warmup-skip {
+            padding: 0.6rem 1.2rem;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text3);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+
+            .btn-warmup-skip:hover {
+                color: var(--text2);
+                border-color: var(--text3);
+                text-decoration: none;
+            }
+
+        @@keyframes fadeUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @@keyframes countUp {
+            from {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+    </style>
+}
+
+<div class="results-page">
+
+    <!-- Header -->
+    <div class="result-header">
+        <div class="result-crown">
+            @if (Model.Wpm >= 80)
+            {
+                <text>🏆</text>
+            }
+            else if (Model.Wpm >= 50)
+            {
+
+                <text>⚡</text>
+            }
+            else
+            {
+
+                <text>🎯</text>
+            }
+        </div>
+        <div class="result-title">
+            @if (Model.Wpm >= 80)
+            {
+                <text>Blazing Fast!</text>
+            }
+            else if (Model.Wpm >= 50)
+            {
+
+                <text>Nice Speed!</text>
+            }
+            else
+            {
+
+                <text>Test Complete</text>
+            }
+        </div>
+    </div>
+
+    <!-- Stage result banner -->
+    @if (Model.StageAdvanced)
+    {
+        <div style="background:rgba(0,255,200,0.05); border:1px solid rgba(0,255,200,0.3); border-radius:var(--radius-lg); padding:1.25rem; margin-bottom:1.5rem; opacity:0; animation:fadeUp 0.5s ease 0.2s forwards;">
+            <div style="font-family:var(--font-display); font-size:1rem; font-weight:700; letter-spacing:2px; color:#00ffc8; margin-bottom:4px;">
+                ▲ STAGE UNLOCKED
+            </div>
+            <div style="font-family:var(--font-mono); font-size:0.8rem; color:var(--text2);">
+                You advanced to <strong style="color:#00ffc8;">Stage @Model.CurrentStage — @Model.StageName</strong>
+            </div>
+            <div style="font-family:var(--font-mono); font-size:0.75rem; color:var(--text3); margin-top:4px;">
+                // next target: complete in @Model.NextDuration s · min accuracy @Model.NextMinAccuracy%
+            </div>
+        </div>
+    }
+    else
+    {
+        <div style="background:rgba(255,51,102,0.05); border:1px solid rgba(255,51,102,0.2); border-radius:var(--radius-lg); padding:1.25rem; margin-bottom:1.5rem; opacity:0; animation:fadeUp 0.5s ease 0.2s forwards;">
+            <div style="font-family:var(--font-display); font-size:1rem; font-weight:700; letter-spacing:2px; color:var(--danger); margin-bottom:4px;">
+                ✗ STAGE NOT CLEARED
+            </div>
+            <div style="font-family:var(--font-mono); font-size:0.8rem; color:var(--text2);">
+                You are still on <strong style="color:var(--accent);">Stage @Model.CurrentStage — @Model.StageName</strong>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.FailReason))
+            {
+                <div style="font-family:var(--font-mono); font-size:0.78rem; color:#ff6b6b; margin-top:8px; padding:8px 12px; background:rgba(255,51,102,0.08); border-left:3px solid rgba(255,51,102,0.5); border-radius:2px;">
+                    → @Model.FailReason
+                </div>
+            }
+            <div style="font-family:var(--font-mono); font-size:0.75rem; color:var(--text3); margin-top:8px;">
+                // required: finish full passage · min accuracy @Model.NextMinAccuracy%
+            </div>
+        </div>
+    }
+
+    <!-- Warm-up prompt — appears after 2 consecutive failures -->
+    @if (Model.SuggestWarmup)
+    {
+        <div class="warmup-prompt">
+            <div class="warmup-prompt-header">
+                <span class="warmup-prompt-icon">🔥</span>
+                <span class="warmup-prompt-title">Struggling with this level?</span>
+            </div>
+            <div class="warmup-prompt-body">
+                You've failed <strong>Stage @Model.CurrentStage</strong> @Model.FailedAttempts times in a row.
+                Try <strong>Word Drop</strong> — a quick arcade drill that sharpens your
+                typing speed and accuracy at this difficulty. Clear <strong>Wave 1 &amp; Wave 2</strong>
+                and you'll come back ready to beat this stage.
+            </div>
+            <div class="warmup-prompt-actions">
+                <a asp-controller="WordDrop"
+                   asp-action="Warmup"
+                   asp-route-stage="@Model.CurrentStage"
+                   class="btn-warmup">
+                    🎮 &nbsp;Play Word Drop
+                </a>
+                <a asp-controller="Test" asp-action="Index" class="btn-warmup-skip">
+                    Skip — retry stage
+                </a>
+            </div>
+        </div>
+    }
+
+    <!-- WPM hero -->
+    <div class="wpm-hero">
+        <div class="wpm-number">@Model.Wpm</div>
+        <div class="wpm-unit">words per minute</div>
+    </div>
+
+    <!-- Stats -->
+    <div class="result-stats">
+        <div class="result-stat">
+            <div class="result-stat-val" style="color: var(--success)">@Model.AccuracyDisplay</div>
+            <div class="result-stat-lbl">Accuracy</div>
+        </div>
+        <div class="result-stat">
+            <div class="result-stat-val" style="color: var(--danger)">@Model.ErrorCount</div>
+            <div class="result-stat-lbl">Errors</div>
+        </div>
+        <div class="result-stat">
+            <div class="result-stat-val">@Model.CorrectKeystrokes</div>
+            <div class="result-stat-lbl">Correct Keys</div>
+        </div>
+    </div>
+
+    <!-- Meta badges -->
+    <div class="result-meta">
+        <span class="badge @(Model.Difficulty == TypingTest.Models.DifficultyLevel.Easy ? "badge-easy" : Model.Difficulty == TypingTest.Models.DifficultyLevel.Medium ? "badge-medium" : "badge-hard")">
+            @Model.Difficulty
+        </span>
+        <span class="badge @(Model.Mode == TypingTest.Models.TestMode.Timed ? "badge-timed" : "badge-words")">
+            @(Model.Mode == TypingTest.Models.TestMode.Timed ? Model.DurationDisplay : $"{Model.WordCountTarget} words")
+        </span>
+        <span class="badge" style="background: var(--surface); color: var(--text3); border: 1px solid var(--border)">
+            @Model.PassageTitle
+        </span>
+    </div>
+
+    <!-- Actions -->
+    <div class="result-actions">
+        <a asp-controller="Test" asp-action="Index" class="btn btn-primary btn-lg">▶ Play Again</a>
+        <a asp-controller="Leaderboard" asp-action="Index" class="btn btn-secondary">◈ Leaderboard</a>
+        <a asp-controller="Test" asp-action="History" class="btn btn-secondary">◷ History</a>
+    </div>
+
+</div>

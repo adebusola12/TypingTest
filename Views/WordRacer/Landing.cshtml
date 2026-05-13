@@ -1,0 +1,410 @@
+﻿@{
+    ViewData["Title"] = "Word Racer";
+    Layout = "_Layout";
+}
+
+<style>
+    .racer-hero {
+        min-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(ellipse at 50% 0%, #1a0f0a 0%, #0a0a0f 70%);
+        padding: 40px 20px;
+        position: relative;
+        overflow: hidden;
+    }
+
+        /* ── Animated road ── */
+        .racer-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient( 90deg, transparent, transparent 58px, rgba(255,165,0,0.04) 58px, rgba(255,165,0,0.04) 60px );
+            animation: roadMove 1.5s linear infinite;
+            pointer-events: none;
+        }
+
+    @@keyframes roadMove {
+        from {
+            background-position-x: 0;
+        }
+
+        to {
+            background-position-x: 60px;
+        }
+    }
+
+    /* ── Title ── */
+    .racer-title {
+        font-family: 'Orbitron', sans-serif;
+        font-size: clamp(36px, 8vw, 72px);
+        font-weight: 900;
+        color: #00ffaa;
+        letter-spacing: 6px;
+        text-shadow: 0 0 40px rgba(0,255,170,0.7), 0 0 80px rgba(0,255,170,0.3);
+        text-align: center;
+        margin-bottom: 6px;
+    }
+
+    .racer-subtitle {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 11px;
+        letter-spacing: 5px;
+        color: rgba(0,255,170,0.5);
+        text-transform: uppercase;
+        margin-bottom: 50px;
+    }
+
+    /* ── Preview track ── */
+    .preview-track {
+        width: 100%;
+        max-width: 600px;
+        background: rgba(0,0,0,0.5);
+        border: 1px solid rgba(0,255,170,0.2);
+        border-radius: 8px;
+        padding: 24px 20px;
+        margin-bottom: 40px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .preview-lane {
+        position: relative;
+        height: 42px;
+        background: rgba(255,255,255,0.03);
+        border-radius: 4px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+    }
+
+    .preview-finish {
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 5px;
+        background: linear-gradient(180deg, transparent, #facc15, transparent);
+        box-shadow: 0 0 10px #facc15;
+    }
+
+    .preview-car {
+        position: absolute;
+        font-size: 26px;
+        animation: previewRush linear infinite;
+        white-space: nowrap;
+    }
+
+    .preview-word {
+        position: absolute;
+        font-size: 12px;
+        letter-spacing: 1px;
+        color: rgba(255,255,255,0.6);
+        animation: previewRush linear infinite;
+        left: 60px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    @@keyframes previewRush {
+        0% {
+            left: -10%;
+        }
+
+        100% {
+            left: 105%;
+        }
+    }
+
+    /* ── Play button ── */
+    .play-btn {
+        padding: 18px 80px;
+        background: rgba(0,255,170,0.1);
+        border: 3px solid #00ffaa;
+        border-radius: 4px;
+        color: #00ffaa;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 16px;
+        font-weight: 900;
+        letter-spacing: 6px;
+        text-transform: uppercase;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.25s;
+        margin-bottom: 40px;
+        box-shadow: 0 0 20px rgba(0,255,170,0.2);
+    }
+
+        .play-btn:hover {
+            background: rgba(0,255,170,0.15);
+            box-shadow: 0 0 40px rgba(0,255,170,0.4);
+            color: #00ffaa;
+            text-decoration: none;
+            transform: translateY(-2px);
+        }
+
+    /* ── How to play ── */
+    .how-section {
+        width: 100%;
+        max-width: 600px;
+        margin-bottom: 40px;
+    }
+
+    .section-label {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 10px;
+        letter-spacing: 4px;
+        color: rgba(0,255,170,0.4);
+        text-transform: uppercase;
+        text-align: center;
+        margin-bottom: 16px;
+    }
+
+    .how-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+    }
+
+    .how-card {
+        background: rgba(0,0,0,0.4);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 6px;
+        padding: 16px 12px;
+        text-align: center;
+    }
+
+    .how-icon {
+        font-size: 28px;
+        margin-bottom: 8px;
+    }
+
+    .how-text {
+        font-size: 11px;
+        color: rgba(255,255,255,0.4);
+        letter-spacing: 0.5px;
+        line-height: 1.6;
+    }
+
+    /* ── Wave preview ── */
+    .wave-section {
+        width: 100%;
+        max-width: 600px;
+        margin-bottom: 40px;
+    }
+
+    .wave-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+
+        .wave-table th {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 9px;
+            letter-spacing: 3px;
+            color: rgba(0,255,170,0.5);
+            text-transform: uppercase;
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            text-align: left;
+        }
+
+        .wave-table td {
+            padding: 10px 12px;
+            color: rgba(255,255,255,0.5);
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            letter-spacing: 0.5px;
+        }
+
+        .wave-table tr:last-child td {
+            border-bottom: none;
+        }
+
+    .wave-num {
+        font-family: 'Orbitron', sans-serif;
+        font-weight: 700;
+        color: #00ffaa;
+    }
+
+    /* ── Power-ups strip ── */
+    .powerup-strip {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+        max-width: 600px;
+        margin-bottom: 20px;
+    }
+
+    .powerup-chip {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        background: rgba(0,0,0,0.4);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 6px;
+        font-size: 12px;
+        color: rgba(255,255,255,0.5);
+    }
+
+    .powerup-name {
+        color: #00ffaa;
+        font-weight: bold;
+        letter-spacing: 1px;
+    }
+
+    .racer-divider {
+        width: 100px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(0,255,170,0.3), transparent);
+        margin: 6px auto;
+    }
+</style>
+
+<div class="racer-hero">
+
+    <!-- Title -->
+    <div class="racer-title">WORD RACER</div>
+    <div class="racer-subtitle">Type the word. Stop the car. Survive.</div>
+
+    <!-- Animated Preview Track -->
+    <div class="preview-track">
+
+        <div class="preview-lane">
+            <div class="preview-finish"></div>
+            <div class="preview-car"
+                 style="animation-duration:2.4s; animation-delay:0s;">
+                🏎️
+            </div>
+            <div class="preview-word"
+                 style="animation-duration:2.4s; animation-delay:0s; color:#f87171;">
+                algorithm
+            </div>
+        </div>
+
+        <div class="preview-lane">
+            <div class="preview-finish"></div>
+            <div class="preview-car"
+                 style="animation-duration:3.5s; animation-delay:0.8s;">
+                🚗
+            </div>
+            <div class="preview-word"
+                 style="animation-duration:3.5s; animation-delay:0.8s; color:#fb923c;">
+                rocket
+            </div>
+        </div>
+
+        <div class="preview-lane">
+            <div class="preview-finish"></div>
+            <div class="preview-car"
+                 style="animation-duration:5s; animation-delay:1.5s;">
+                🚙
+            </div>
+            <div class="preview-word"
+                 style="animation-duration:5s; animation-delay:1.5s; color:#facc15;">
+                cat
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Play Button -->
+    <a href="/WordRacer/Play" class="play-btn">▶ &nbsp;PLAY</a>
+
+    <!-- How To Play -->
+    <div class="how-section">
+        <div class="section-label">How To Play</div>
+        <div class="how-grid">
+            <div class="how-card">
+                <div class="how-icon">🏎️</div>
+                <div class="how-text">Cars move toward the finish line carrying words</div>
+            </div>
+            <div class="how-card">
+                <div class="how-icon">⌨️</div>
+                <div class="how-text">Type the word and press Space before the car finishes</div>
+            </div>
+            <div class="how-card">
+                <div class="how-icon">💥</div>
+                <div class="how-text">Type it in time and the car explodes!</div>
+            </div>
+            <div class="how-card">
+                <div class="how-icon">❤️</div>
+                <div class="how-text">Car crosses the line — you lose a life. 3 lives total!</div>
+            </div>
+            <div class="how-card">
+                <div class="how-icon">🔥</div>
+                <div class="how-text">Build combos for score multipliers and bonuses!</div>
+            </div>
+            <div class="how-card">
+                <div class="how-icon">⚡</div>
+                <div class="how-text">Earn power-ups every 10 words destroyed!</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wave Table -->
+    <div class="wave-section">
+        <div class="section-label">Wave Structure</div>
+        <table class="wave-table">
+            <tr>
+                <th>Wave</th>
+                <th>Cars</th>
+                <th>Speed</th>
+                <th>Words</th>
+            </tr>
+            <tr>
+                <td><span class="wave-num">1 – 3</span></td>
+                <td>1 car</td>
+                <td>🐌 Slow → Medium</td>
+                <td>Easy</td>
+            </tr>
+            <tr>
+                <td><span class="wave-num">4 – 6</span></td>
+                <td>2 cars</td>
+                <td>🚗 Medium → Fast</td>
+                <td>Easy + Medium</td>
+            </tr>
+            <tr>
+                <td><span class="wave-num">7 – 9</span></td>
+                <td>3 cars</td>
+                <td>🏎️ Fast → Turbo</td>
+                <td>Medium + Hard</td>
+            </tr>
+            <tr>
+                <td><span class="wave-num">10+</span></td>
+                <td>3 cars</td>
+                <td>🔥 Turbo</td>
+                <td>Hard only</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Power-ups -->
+    <div class="how-section">
+        <div class="section-label">Power-Ups (Every 10 Words)</div>
+        <div class="powerup-strip">
+            <div class="powerup-chip">
+                🛑 <span class="powerup-name">FREEZE</span>
+                <span>Pause all cars 2s</span>
+            </div>
+            <div class="powerup-chip">
+                ⚡ <span class="powerup-name">SLOW</span>
+                <span>Half speed, 3 cars</span>
+            </div>
+            <div class="powerup-chip">
+                💣 <span class="powerup-name">BOMB</span>
+                <span>Destroy closest car</span>
+            </div>
+            <div class="powerup-chip">
+                ❤️ <span class="powerup-name">HEAL</span>
+                <span>Restore 1 life</span>
+            </div>
+        </div>
+    </div>
+
+</div>

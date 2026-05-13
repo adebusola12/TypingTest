@@ -1,0 +1,1449 @@
+﻿@model TypingTest.ViewModels.WordRacerLaunchViewModel
+@{
+    ViewData["Title"] = "Word Racer";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Word Racer — TypeX</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            font-family: 'Share Tech Mono', monospace;
+            overflow: hidden;
+        }
+
+        #game-wrapper {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: radial-gradient(ellipse at 50% 10%,#0d1a2e 0%, #0a0a0f 70%);
+        }
+
+        /* ── HUD ── */
+        #hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 24px;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(6px);
+            border-bottom: 2px solid rgba(0,255,170,0.3);
+            z-index: 10;
+            flex-shrink: 0;
+        }
+
+        .hud-block {
+            text-align: center;
+        }
+
+        .hud-label {
+            font-size: 9px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(0,255,170,0.6);
+            margin-bottom: 2px;
+        }
+
+        .hud-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: #00ffaa;
+            text-shadow: 0 0 10px rgba(0,255,170,0.7);
+        }
+
+            .hud-value.green {
+                color: #00ffaa;
+                text-shadow: 0 0 10px rgba(0,255,170,0.7);
+            }
+
+            .hud-value.yellow {
+                color: #facc15;
+                text-shadow: 0 0 10px rgba(250,204,21,0.7);
+            }
+
+        /* ── Lives ── */
+        #lives-display {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .life-icon {
+            width: 16px;
+            height: 16px;
+            background: #ff3355;
+            clip-path: polygon(50% 0%,61% 35%,98% 35%,68% 57%, 79% 91%,50% 70%,21% 91%,32% 57%, 2% 35%,39% 35%);
+            box-shadow: 0 0 8px rgba(255,51,85,0.8);
+            transition: all 0.3s;
+        }
+
+            .life-icon.lost {
+                background: #2a1a1a;
+                box-shadow: none;
+            }
+
+        /* ── Power-up slot ── */
+        #powerup-slot {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+        }
+
+        #powerup-box {
+            width: 42px;
+            height: 42px;
+            border: 2px solid rgba(0,255,170,0.3);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            background: rgba(0,0,0,0.4);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+            #powerup-box.ready {
+                border-color: #facc15;
+                box-shadow: 0 0 16px rgba(250,204,21,0.4);
+                animation: powerPulse 1s ease-in-out infinite alternate;
+            }
+
+        @@keyframes powerPulse {
+            from {
+                box-shadow: 0 0 8px rgba(250,204,21,0.3);
+            }
+
+            to {
+                box-shadow: 0 0 24px rgba(250,204,21,0.7);
+            }
+        }
+
+        #powerup-label {
+            font-size: 8px;
+            letter-spacing: 2px;
+            color: rgba(0,255,170,0.5);
+            text-transform: uppercase;
+        }
+
+        /* ── Combo ── */
+        #combo-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        #combo-val {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: #facc15;
+            text-shadow: 0 0 12px rgba(250,204,21,0.7);
+            transition: transform 0.1s;
+        }
+
+            #combo-val.bump {
+                animation: comboBump 0.2s ease;
+            }
+
+        @@keyframes comboBump {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.4);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* ── Arena ── */
+        #arena {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: repeating-linear-gradient( 180deg, rgba(0,255,170,0.015) 0px, rgba(0,255,170,0.015) 1px, transparent 1px, transparent 60px );
+        }
+
+        /* Scrolling road lines */
+        #road-lines {
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient( 90deg, transparent, transparent 58px, rgba(255,255,255,0.04) 58px, rgba(255,255,255,0.04) 60px );
+            animation: roadScroll 0.8s linear infinite;
+            pointer-events: none;
+        }
+
+        @@keyframes roadScroll {
+            from {
+                background-position-x: 0;
+            }
+
+            to {
+                background-position-x: 60px;
+            }
+        }
+
+        /* ── Finish Line ── */
+        .finish-line {
+            position: absolute;
+            right: 28px;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            background: linear-gradient(180deg, transparent, #facc15 20%, #facc15 80%, transparent);
+            box-shadow: 0 0 18px rgba(250,204,21,0.8);
+            z-index: 5;
+        }
+
+        /* Checkered flag pattern */
+        .finish-flag {
+            position: absolute;
+            right: 33px;
+            top: 0;
+            bottom: 0;
+            width: 14px;
+            background-image: repeating-conic-gradient( rgba(255,255,255,0.12) 0% 25%, transparent 0% 50% );
+            background-size: 8px 8px;
+            z-index: 4;
+        }
+
+        /* ── Car Lanes ── */
+        .car-lane {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* ── Racing Car ── */
+        .racer-car {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 10;
+            transition: left 0.12s linear;
+        }
+
+        .racer-car-emoji {
+            font-size: 36px;
+            filter: drop-shadow(0 0 8px currentColor);
+        }
+
+        .racer-word {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 4px;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.7);
+            white-space: nowrap;
+            letter-spacing: 1px;
+            transition: all 0.15s;
+        }
+
+        /* ── Targeted car (player typing this word) ── */
+        .racer-car.targeted .racer-word {
+            color: #00ffaa;
+            border-color: rgba(0,255,170,0.5);
+            background: rgba(0,255,170,0.08);
+            box-shadow: 0 0 12px rgba(0,255,170,0.3);
+        }
+
+        /* Typed portion highlight */
+        .typed-portion {
+            color: #00ffaa;
+        }
+
+        .remaining-portion {
+            color: rgba(255,255,255,0.5);
+        }
+
+        /* ── Danger — car is close to finish ── */
+        .racer-car.danger .racer-word {
+            color: #ff3355;
+            border-color: rgba(255,51,85,0.5);
+            background: rgba(255,51,85,0.08);
+            animation: dangerPulse 0.5s ease-in-out infinite alternate;
+        }
+
+        @@keyframes dangerPulse {
+            from {
+                box-shadow: 0 0 6px rgba(255,51,85,0.3);
+            }
+
+            to {
+                box-shadow: 0 0 20px rgba(255,51,85,0.7);
+            }
+        }
+
+        /* ── Explosion ── */
+        .racer-car.exploding {
+            animation: carExplode 0.4s forwards;
+        }
+
+        @@keyframes carExplode {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(2.2);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(3);
+                opacity: 0;
+            }
+        }
+
+        /* ── Miss flash ── */
+        #life-flash {
+            position: fixed;
+            inset: 0;
+            background: rgba(255,51,85,0.18);
+            pointer-events: none;
+            opacity: 0;
+            z-index: 80;
+        }
+
+            #life-flash.flash {
+                animation: lifeFlash 0.5s forwards;
+            }
+
+        @@keyframes lifeFlash {
+            0% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        /* ── Freeze overlay ── */
+        #freeze-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(125,211,252,0.06);
+            border: 3px solid rgba(125,211,252,0.3);
+            pointer-events: none;
+            opacity: 0;
+            z-index: 70;
+        }
+
+            #freeze-overlay.active {
+                opacity: 1;
+            }
+
+        /* ── Wave Banner ── */
+        #wave-banner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(28px, 5vw, 44px);
+            font-weight: 900;
+            color: #00ffaa;
+            text-shadow: 0 0 30px rgba(0,255,170,0.9);
+            letter-spacing: 6px;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 30;
+            text-align: center;
+        }
+
+            #wave-banner.show {
+                animation: wavePop 2s forwards;
+            }
+
+        @@keyframes wavePop {
+            0% {
+                opacity: 0;
+                transform: translate(-50%,-50%) scale(0.6);
+            }
+
+            20% {
+                opacity: 1;
+                transform: translate(-50%,-50%) scale(1.1);
+            }
+
+            70% {
+                opacity: 1;
+                transform: translate(-50%,-50%) scale(1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translate(-50%,-50%) scale(1);
+            }
+        }
+
+        /* ── Combo banner ── */
+        #combo-banner {
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 22px;
+            font-weight: 900;
+            color: #facc15;
+            text-shadow: 0 0 20px rgba(250,204,21,0.9);
+            letter-spacing: 4px;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 30;
+        }
+
+            #combo-banner.show {
+                animation: comboFlash 1.2s forwards;
+            }
+
+        @@keyframes comboFlash {
+            0% {
+                opacity: 0;
+                transform: translate(-50%,-50%) scale(0.7);
+            }
+
+            20% {
+                opacity: 1;
+                transform: translate(-50%,-50%) scale(1.1);
+            }
+
+            70% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        /* ── Particles ── */
+        .particle {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: particleFly 0.7s forwards;
+        }
+
+        @@keyframes particleFly {
+            0% {
+                opacity: 1;
+                transform: translate(0,0) scale(1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translate(var(--dx), var(--dy)) scale(0);
+            }
+        }
+
+        /* ── Power-up popup ── */
+        .powerup-popup {
+            position: absolute;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            font-weight: 900;
+            pointer-events: none;
+            z-index: 40;
+            animation: powerupPop 1s forwards;
+            white-space: nowrap;
+            text-shadow: 0 0 12px currentColor;
+        }
+
+        @@keyframes powerupPop {
+            0% {
+                opacity: 0;
+                transform: translateY(0) scale(0.5);
+            }
+
+            30% {
+                opacity: 1;
+                transform: translateY(-20px) scale(1.2);
+            }
+
+            70% {
+                opacity: 1;
+                transform: translateY(-40px) scale(1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(-60px) scale(0.9);
+            }
+        }
+
+        /* ── Input Zone ── */
+        #input-zone {
+            padding: 14px 24px;
+            background: rgba(0,0,0,0.8);
+            border-top: 2px solid rgba(0,255,170,0.4);
+            flex-shrink: 0;
+        }
+
+        #input-label {
+            font-size: 10px;
+            letter-spacing: 3px;
+            color: rgba(0,255,170,0.5);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        #word-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid #00ffaa;
+            color: #00ffaa;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 22px;
+            outline: none;
+            padding: 4px 0;
+            caret-color: #00ffaa;
+            transition: border-color 0.15s, color 0.15s;
+        }
+
+            #word-input:focus {
+                border-bottom-color: #00ffaa;
+            }
+
+            #word-input.correct {
+                color: #00ffaa;
+                border-bottom-color: #00ffaa;
+            }
+
+            #word-input.wrong {
+                color: #ff3355;
+                border-bottom-color: #ff3355;
+                animation: inputShake 0.35s ease;
+            }
+
+        @@keyframes inputShake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+
+            20% {
+                transform: translateX(-7px);
+            }
+
+            40% {
+                transform: translateX(7px);
+            }
+
+            60% {
+                transform: translateX(-5px);
+            }
+
+            80% {
+                transform: translateX(5px);
+            }
+        }
+
+        /* ── Start Screen ── */
+        #start-screen {
+            position: absolute;
+            inset: 0;
+            background: rgba(10,10,15,0.97);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            gap: 16px;
+            text-align: center;
+            padding: 24px;
+        }
+
+            #start-screen h1 {
+                font-family: 'Orbitron', sans-serif;
+                font-size: clamp(32px, 7vw, 64px);
+                font-weight: 900;
+                color: #00ffaa;
+                letter-spacing: 6px;
+                text-shadow: 0 0 40px rgba(0,255,170,0.8);
+            }
+
+        .start-divider {
+            width: 100px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(0,255,170,0.4), transparent);
+            margin: 4px auto;
+        }
+
+        .start-rules {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-width: 480px;
+        }
+
+        .start-rule {
+            font-size: 12px;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.4);
+            line-height: 1.7;
+        }
+
+        .hl-orange {
+            color: #00ffaa;
+            font-weight: bold;
+        }
+
+        .hl-green {
+            color: #00ffaa;
+            font-weight: bold;
+        }
+
+        .hl-red {
+            color: #ff3355;
+            font-weight: bold;
+        }
+
+        .hl-yellow {
+            color: #facc15;
+            font-weight: bold;
+        }
+
+        #start-btn {
+            padding: 15px 60px;
+            background: rgba(0,255,170,0.08);
+            border: 3px solid #00ffaa;
+            color: #00ffaa;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 5px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+
+            #start-btn:hover {
+                background: rgba(0,255,170,0.15);
+                box-shadow: 0 0 30px rgba(0,255,170,0.35);
+            }
+    </style>
+</head>
+<body>
+    <div id="game-wrapper">
+
+        <div id="life-flash"></div>
+        <div id="freeze-overlay"></div>
+
+        <!-- HUD -->
+        <div id="hud">
+            <div class="hud-block">
+                <div class="hud-label">Wave</div>
+                <div class="hud-value yellow" id="hud-wave">1</div>
+            </div>
+            <div class="hud-block">
+                <div class="hud-label">Score</div>
+                <div class="hud-value yellow" id="hud-score">0</div>
+            </div>
+            <div class="hud-block">
+                <div class="hud-label">WPM</div>
+                <div class="hud-value green" id="hud-wpm">0</div>
+            </div>
+            <div class="hud-block">
+                <div class="hud-label">Lives</div>
+                <div id="lives-display">
+                    <div class="life-icon" id="life-1"></div>
+                    <div class="life-icon" id="life-2"></div>
+                    <div class="life-icon" id="life-3"></div>
+                </div>
+            </div>
+            <div class="hud-block" id="combo-display">
+                <div class="hud-label">Combo</div>
+                <div id="combo-val" class="hud-value">x1</div>
+            </div>
+            <div id="powerup-slot">
+                <div id="powerup-box" title="Click or press TAB to use power-up">
+                    <span id="powerup-icon">–</span>
+                </div>
+                <div id="powerup-label">Power-Up</div>
+            </div>
+            <div class="hud-block">
+                <div class="hud-label">Words</div>
+                <div class="hud-value" id="hud-words">0</div>
+            </div>
+            <button id="mute-btn" onclick="handleMute()" style="
+        background: none;
+        border: 1px solid rgba(0,255,170,0.2);
+        border-radius: 4px;
+        color: rgba(0,255,170,0.5);
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 0.75rem;
+        padding: 4px 10px;
+        cursor: pointer;
+        transition: border-color 0.2s;
+    ">
+                🔊
+            </button>
+        </div>
+
+        <!-- Arena -->
+        <div id="arena">
+            <div id="road-lines"></div>
+            <div class="finish-flag"></div>
+            <div class="finish-line"></div>
+
+            <!-- Lane 1 -->
+            <div class="car-lane" id="lane-0" style="top: 20px;"></div>
+            <!-- Lane 2 -->
+            <div class="car-lane" id="lane-1" style="top: 110px;"></div>
+            <!-- Lane 3 -->
+            <div class="car-lane" id="lane-2" style="top: 200px;"></div>
+
+            <div id="wave-banner">WAVE 1</div>
+            <div id="combo-banner">COMBO x5! 🔥</div>
+        </div>
+
+        <!-- Input Zone -->
+        <div id="input-zone">
+            <div id="input-label">▶ Type the word on the approaching car</div>
+            <input type="text" id="word-input"
+                   autocomplete="off" autocorrect="off"
+                   autocapitalize="off" spellcheck="false"
+                   placeholder="start typing..." />
+        </div>
+
+        <!-- Start Screen -->
+        <div id="start-screen">
+            <h1>WORD RACER</h1>
+            <div class="start-divider"></div>
+            <p style="font-family:'Orbitron',sans-serif; font-size:10px;
+                  letter-spacing:4px; color:rgba(0,255,170,0.5);">
+                TYPE THE WORD. STOP THE CAR.
+            </p>
+            <div class="start-divider"></div>
+            <div class="start-rules">
+                <div class="start-rule">
+                    Cars race toward the finish line carrying words —
+                    <span class="hl-orange">type the word and press Space</span> to destroy the car!
+                </div>
+                <div class="start-rule">
+                    Just <span class="hl-green">start typing</span> — the game auto-detects
+                    which car you're targeting, no clicking needed
+                </div>
+                <div class="start-rule">
+                    Car crosses the finish line = <span class="hl-red">lose a life</span> —
+                    you have <span class="hl-red">3 lives</span> total
+                </div>
+                <div class="start-rule">
+                    Build a <span class="hl-yellow">combo streak</span> for score
+                    multipliers — every 10 words earns a <span class="hl-yellow">power-up!</span>
+                </div>
+                <div class="start-rule">
+                    Press <span class="hl-yellow">TAB</span> or click the power-up box to activate it
+                </div>
+            </div>
+            <div class="start-divider"></div>
+            <button id="start-btn">▶ &nbsp;START RACE</button>
+        </div>
+
+    </div>
+    <script src="/js/word-racer-audio.js"></script>
+
+    <script>
+        (function () {
+
+            // ── Word Lists ────────────────────────────────────────────────────────────
+            const WORDS = {
+                easy: [
+                    'limp','roar','loud','gaze','reap','mold','flat','peak','doze','rope',
+                    'blue','tree','book','fish','bird','rain','snow','moon','star',
+                    'hand','game','time','home','road','fire','wind','door','word',
+                    'jump','ball','cool','fast','slow','rock','sand','leaf','city',
+                    'lamp','boat','drum','frog','gift','gold','hill','iron','kite',
+                    'lake','mist','nest','pine','rose','tide','fox','bell','cake'
+                ],
+                medium: [
+                    'river','cloud','stone','flame','brave','sharp','swift','storm',
+                    'grasp','piano','orbit','chaos','frost','blaze','crown','crisp',
+                    'castle','bridge','silver','forest','mirror','rocket','falcon',
+                    'shield','sprint','beacon','gravel','marble','plunge','riddle',
+                    'pocket','winner','danger','target','energy','signal','trophy',
+                    'anchor','bottle','candle','desert','engine','fabric','garden',
+                    'harbor','insect','jungle','kennel','ladder','meadow','noodle'
+                ],
+                hard: [
+                    'algorithm','keyboard','champion','velocity','precision',
+                    'accuracy','momentum','tournament','lightning','phenomenal',
+                    'extraordinary','consciousness','optimization','neuroplasticity',
+                    'rhythmically','unprecedented','atmospheric','revolutionary',
+                    'spectacular','persistence','determination','championship',
+                    'cryptography','thermodynamic','electromagnetic','biochemistry',
+                    'infrastructure','philosophical','simultaneously','multiplication'
+                ]
+            };
+
+            // ── Wave Config ───────────────────────────────────────────────────────────
+                const WAVE_CONFIG = [
+        null,
+        { maxCars: 1, speed: 0.18, pool: ['easy'],           spawnDelay: 4000 }, // W1 — very slow
+        { maxCars: 1, speed: 0.26, pool: ['easy'],           spawnDelay: 3500 }, // W2 — slow
+        { maxCars: 1, speed: 0.38, pool: ['easy','medium'],  spawnDelay: 3000 }, // W3 — medium
+        { maxCars: 2, speed: 0.45, pool: ['easy','medium'],  spawnDelay: 2800 }, // W4
+        { maxCars: 2, speed: 0.58, pool: ['medium'],         spawnDelay: 2400 }, // W5
+        { maxCars: 2, speed: 0.72, pool: ['medium'],         spawnDelay: 2200 }, // W6
+        { maxCars: 3, speed: 0.60, pool: ['medium','hard'],  spawnDelay: 2400 }, // W7
+        { maxCars: 3, speed: 0.78, pool: ['medium','hard'],  spawnDelay: 2000 }, // W8
+        { maxCars: 3, speed: 0.95, pool: ['hard'],           spawnDelay: 1700 }, // W9
+        { maxCars: 3, speed: 1.15, pool: ['hard'],           spawnDelay: 1400 }, // W10+
+            ];
+
+            const WORDS_PER_WAVE  = 6;
+            const STARTING_LIVES  = 3;
+            const POWERUP_EVERY   = 10;
+            const DANGER_ZONE     = 0.72;
+
+
+            // Power-up types
+            const POWERUPS = ['🛑 FREEZE', '⚡ SLOW', '💣 BOMB', '❤️ HEAL'];
+
+            // ── State ─────────────────────────────────────────────────────────────────
+            let lives         = STARTING_LIVES;
+            let score         = 0;
+            let wave          = 1;
+            let wordsDestroyed= 0;
+            let carsDestroyed = 0;
+            let combo         = 1;
+            let bestCombo     = 1;
+            let keystrokes    = 0;
+            let bestWpm       = 0;
+            let gameRunning   = false;
+            let gameStartTime = 0;
+            let powerup       = null;
+            let powerupsUsed  = 0;
+            let slowActive    = false;
+            let frozenUntil   = 0;
+            let spawnTimer    = null;
+            let rafId         = null;
+
+            // Active cars: { id, word, x, laneIndex, el, speed, slowMod }
+            let activeCars = [];
+            let carIdCounter = 0;
+
+            // Lane occupancy tracking
+            let laneOccupied = [false, false, false];
+
+            // ── DOM ───────────────────────────────────────────────────────────────────
+            const arena        = document.getElementById('arena');
+            const input        = document.getElementById('word-input');
+            const hudWave      = document.getElementById('hud-wave');
+            const hudScore     = document.getElementById('hud-score');
+            const hudWpm       = document.getElementById('hud-wpm');
+            const hudWords     = document.getElementById('hud-words');
+            const comboVal     = document.getElementById('combo-val');
+            const waveBanner   = document.getElementById('wave-banner');
+            const comboBanner  = document.getElementById('combo-banner');
+            const lifeFlash    = document.getElementById('life-flash');
+            const freezeOverlay= document.getElementById('freeze-overlay');
+            const powerupBox   = document.getElementById('powerup-box');
+            const powerupIcon  = document.getElementById('powerup-icon');
+
+            // ── Helpers ───────────────────────────────────────────────────────────────
+            function getWaveCfg() {
+                return WAVE_CONFIG[Math.min(wave, WAVE_CONFIG.length - 1)];
+            }
+
+            function getRandomWord() {
+                const cfg  = getWaveCfg();
+                const pool = cfg.pool[Math.floor(Math.random() * cfg.pool.length)];
+                const list = WORDS[pool];
+                return list[Math.floor(Math.random() * list.length)];
+            }
+
+            function getFreeLane() {
+                // Returns index of a free lane, or -1 if all occupied
+                const free = [0, 1, 2].filter(i => !laneOccupied[i]);
+                if (free.length === 0) return -1;
+                return free[Math.floor(Math.random() * free.length)];
+            }
+
+            // ── HUD Update ────────────────────────────────────────────────────────────
+            function updateHUD() {
+                hudWave.textContent  = wave;
+                hudScore.textContent = score;
+                hudWords.textContent = wordsDestroyed;
+
+                const elapsed = (Date.now() - gameStartTime) / 60000;
+                const wpm     = elapsed > 0
+                    ? Math.round((keystrokes / 5) / elapsed) : 0;
+                if (wpm > bestWpm) bestWpm = wpm;
+                hudWpm.textContent = wpm;
+
+                // Combo
+                comboVal.textContent = 'x' + combo;
+
+                // Lives
+                for (let i = 1; i <= 3; i++) {
+                    document.getElementById('life-' + i)
+                        .classList.toggle('lost', i > lives);
+                }
+            }
+
+            // ── Power-up UI ───────────────────────────────────────────────────────────
+            function setPowerup(p) {
+                powerup = p;
+                if (p) {
+                    powerupIcon.textContent = p.split(' ')[0]; // just the emoji
+                    powerupBox.classList.add('ready');
+                } else {
+                    powerupIcon.textContent = '–';
+                    powerupBox.classList.remove('ready');
+                }
+            }
+
+            function awardPowerup() {
+                const p = POWERUPS[Math.floor(Math.random() * POWERUPS.length)];
+                setPowerup(p);
+                showPowerupPopup('⚡ ' + p + ' READY!', '#facc15');
+            }
+
+            function usePowerup() {
+                if (!powerup || !gameRunning) return;
+                powerupsUsed++;
+                const p = powerup;
+                setPowerup(null);
+
+                if (typeof WordRacerAudio !== 'undefined') {
+                    WordRacerAudio.playPowerupActivate(p);
+                }
+
+                if (p.includes('FREEZE')) {
+                    // Freeze all cars for 2 seconds
+                    frozenUntil = Date.now() + 2000;
+                    freezeOverlay.classList.add('active');
+                    setTimeout(() => freezeOverlay.classList.remove('active'), 2000);
+                    showPowerupPopup('🛑 FROZEN! 2s', '#7dd3fc');
+                }
+                else if (p.includes('SLOW')) {
+                    // Slow all cars for next 5 seconds
+                    slowActive = true;
+                    activeCars.forEach(c => c.slowMod = 0.4);
+                    showPowerupPopup('⚡ SLOW MODE!', '#a78bfa');
+                    setTimeout(() => {
+                        slowActive = false;
+                        activeCars.forEach(c => c.slowMod = 1);
+                    }, 5000);
+                }
+                else if (p.includes('BOMB')) {
+                    // Destroy closest car to finish line
+                    if (activeCars.length === 0) return;
+                    const closest = activeCars.reduce((a, b) => a.x > b.x ? a : b);
+                    destroyCar(closest, true);
+                    showPowerupPopup('💣 BOOM!', '#00ffaa');
+                }
+                else if (p.includes('HEAL')) {
+                    if (lives < 3) {
+                        lives++;
+                        updateHUD();
+                        showPowerupPopup('❤️ +1 LIFE!', '#ff3355');
+                    } else {
+                        // Already at max — give score instead
+                        score += 500;
+                        updateHUD();
+                        showPowerupPopup('❤️ +500 BONUS!', '#ff3355');
+                    }
+                }
+            }
+
+            function showPowerupPopup(text, color) {
+                const pop = document.createElement('div');
+                pop.className     = 'powerup-popup';
+                pop.textContent   = text;
+                pop.style.color   = color;
+                pop.style.left    = '50%';
+                pop.style.top     = '40%';
+                pop.style.transform = 'translateX(-50%)';
+                arena.appendChild(pop);
+                setTimeout(() => pop.remove(), 1000);
+            }
+
+            // ── Spawn Car ─────────────────────────────────────────────────────────────
+            function spawnCar() {
+                if (!gameRunning) return;
+                const cfg      = getWaveCfg();
+                const maxCars  = cfg.maxCars;
+
+                if (activeCars.length >= maxCars) return;
+
+                const laneIdx = getFreeLane();
+                if (laneIdx === -1) return;
+
+                const word    = getRandomWord();
+                const id      = ++carIdCounter;
+                const lane    = document.getElementById('lane-' + laneIdx);
+                const speed   = cfg.speed * (slowActive ? 0.4 : 1);
+
+                // Car element
+                const carEl = document.createElement('div');
+                carEl.className   = 'racer-car';
+                carEl.dataset.id  = id;
+                carEl.style.top   = '50%';
+                carEl.style.transform = 'translateY(-50%)';
+                carEl.style.left  = '6%';
+
+                // Pick emoji based on speed
+                const emoji = cfg.speed <= 0.38 ? '🚙' :
+                              cfg.speed <= 0.65 ? '🚗' :
+                              cfg.speed <= 0.90 ? '🏎️' : '🔥';
+
+                carEl.innerHTML = `
+                    <div class="racer-car-emoji">${emoji}</div>
+                    <div class="racer-word" id="word-${id}">${word}</div>
+                `;
+
+                lane.appendChild(carEl);
+                laneOccupied[laneIdx] = true;
+
+                activeCars.push({
+                    id, word, x: 6,
+                    laneIndex: laneIdx,
+                    el: carEl,
+                    wordEl: carEl.querySelector('#word-' + id),
+                    speed,
+                    slowMod: 1
+                });
+            }
+
+            // ── Destroy Car (word typed correctly or bomb) ────────────────────────────
+            function destroyCar(car, isBomb = false) {
+                // Explosion animation
+                car.el.classList.add('exploding');
+
+                // Particles
+                spawnParticles(car);
+
+                setTimeout(() => {
+                    car.el.remove();
+                }, 400);
+
+                // Remove from active list + free lane
+                activeCars     = activeCars.filter(c => c.id !== car.id);
+                laneOccupied[car.laneIndex] = false;
+
+                if (!isBomb) {
+                    // Score: base + length bonus + combo
+                    const lenBonus = car.word.length * 8;
+                    score         += Math.floor((10 + lenBonus) * combo);
+                    wordsDestroyed++;
+                    carsDestroyed++;
+                    keystrokes    += car.word.length;
+
+                    if (typeof WordRacerAudio !== 'undefined') {
+                        WordRacerAudio.playDestroy();
+                    }
+
+                    // Combo
+                    combo = Math.min(combo + 1, 8);
+                    if (combo > bestCombo) bestCombo = combo;
+
+                    // Combo banner milestones
+                    if (combo === 3 || combo === 5 || combo === 8) {
+                        showComboBanner(combo);
+
+                        if (typeof WordRacerAudio !== 'undefined') {
+                            WordRacerAudio.playCombo(combo);
+                        }
+                    }
+
+                    // Wave advance check
+                    const newWave = Math.floor(wordsDestroyed / WORDS_PER_WAVE) + 1;
+                    if (newWave > wave) {
+                        wave = newWave;
+                        showWaveBanner(wave);
+
+                        if(typeof WordRacerAudio !== 'undefined') {
+                            WordRacerAudio.playWave(wave);
+                        }
+                        restartSpawn();
+                    }
+
+                    // Power-up award
+                    if (wordsDestroyed % POWERUP_EVERY === 0 && !powerup) {
+                        awardPowerup();
+
+                        if (typeof WordRacerAudio !== 'undefined') {
+                            WordRacerAudio.playPowerupEarned();
+                        }
+                    }
+                } else {
+                    // Bomb kill still gives points
+                    score += 150;
+                    carsDestroyed++;
+                }
+
+                updateHUD();
+                // Clear input and highlights
+                input.value = '';
+                highlightCars('');
+            }
+
+            // ── Miss (car crossed finish line) ────────────────────────────────────────
+            function missCar(car) {
+                // Animate off screen — FAST EXIT (50ms instead of 300ms)
+                car.el.style.transition = 'opacity 0.2s';
+                car.el.style.opacity    = '0';
+                setTimeout(() => car.el.remove(), 50);
+
+                activeCars     = activeCars.filter(c => c.id !== car.id);
+                laneOccupied[car.laneIndex] = false;
+
+                // Lose life + reset
+                lives--;
+                combo = 1;
+                updateHUD();
+                triggerLifeFlash();
+
+                if (typeof WordRacerAudio !== 'undefined') {
+                    WordRacerAudio.playMiss();
+                }
+
+                if (lives <= 0) {
+                    endGame();
+                }
+            }
+
+            // ── Particles ─────────────────────────────────────────────────────────────
+            function spawnParticles(car) {
+                const rect  = car.el.getBoundingClientRect();
+                const arRect = arena.getBoundingClientRect();
+                const cx    = rect.left - arRect.left + rect.width  / 2;
+                const cy    = rect.top  - arRect.top  + rect.height / 2;
+                const colors = ['#00ffaa','#facc15','#00ffaa','#ff3355','#fff'];
+
+                for (let i = 0; i < 12; i++) {
+                    const p     = document.createElement('div');
+                    p.className = 'particle';
+                    const angle = (i / 12) * Math.PI * 2;
+                    const dist  = 30 + Math.random() * 40;
+                    p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+                    p.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+                    p.style.background = colors[i % colors.length];
+                    p.style.left = cx + 'px';
+                    p.style.top  = cy + 'px';
+                    arena.appendChild(p);
+                    setTimeout(() => p.remove(), 700);
+                }
+            }
+
+            // ── Life Flash ────────────────────────────────────────────────────────────
+            function triggerLifeFlash() {
+                lifeFlash.classList.remove('flash');
+                void lifeFlash.offsetWidth;
+                lifeFlash.classList.add('flash');
+            }
+
+            // ── Wave Banner ───────────────────────────────────────────────────────────
+            function showWaveBanner(w) {
+                waveBanner.textContent = `WAVE ${w}`;
+                waveBanner.classList.remove('show');
+                void waveBanner.offsetWidth;
+                waveBanner.classList.add('show');
+                setTimeout(() => waveBanner.classList.remove('show'), 2000);
+            }
+
+            // ── Combo Banner ──────────────────────────────────────────────────────────
+            function showComboBanner(c) {
+                const msgs = {
+                    3: 'COMBO x3! 🔥',
+                    5: 'COMBO x5! ⚡',
+                    8: 'COMBO x8! 💥 UNSTOPPABLE!'
+                };
+                comboBanner.textContent = msgs[c] || `COMBO x${c}!`;
+                comboBanner.classList.remove('show');
+                void comboBanner.offsetWidth;
+                comboBanner.classList.add('show');
+                setTimeout(() => comboBanner.classList.remove('show'), 1200);
+            }
+
+            // ── Auto-Detect Target ────────────────────────────────────────────────────
+            function getTargetCar(typed) {
+                if (!typed) return null;
+
+                // Find cars whose word starts with what the player is typing
+                const matches = activeCars.filter(c =>
+                    c.word.toLowerCase().startsWith(typed.toLowerCase())
+                );
+
+                if (matches.length === 0) return null;
+                if (matches.length === 1) return matches[0];
+
+                // Multiple matches → prioritise the one closest to finish line
+                return matches.reduce((a, b) => a.x > b.x ? a : b);
+            }
+
+            // ── Highlight Cars ────────────────────────────────────────────────────────
+            function highlightCars(typed) {
+                const target = typed ? getTargetCar(typed) : null;
+
+                activeCars.forEach(car => {
+                    car.el.classList.remove('targeted');
+
+                    if (target && car.id === target.id) {
+                        car.el.classList.add('targeted');
+
+                        // Show typed + remaining split
+                        const typedPart     = car.word.slice(0, typed.length);
+                        const remainingPart = car.word.slice(typed.length);
+                        car.wordEl.innerHTML =
+                            `<span class="typed-portion">${typedPart}</span>` +
+                            `<span class="remaining-portion">${remainingPart}</span>`;
+                    } else {
+                        // Restore plain text
+                        car.wordEl.textContent = car.word;
+                    }
+                });
+            }
+
+            // ── Input Handling ────────────────────────────────────────────────────────
+            input.addEventListener('input', () => {
+                if (!gameRunning) return;
+
+                const typed = input.value.trim().toLowerCase();
+                if (!typed) {
+                    highlightCars('');
+                    return;
+                }
+
+                // Check for exact match (player finished typing the word)
+                const exactMatch = activeCars.find(c =>
+                    c.word.toLowerCase() === typed
+                );
+
+                if (exactMatch) {
+                    // ✅ Perfect — destroy the car
+                    destroyCar(exactMatch);
+                    input.value = '';
+                    input.classList.add('correct');
+                    setTimeout(() => input.classList.remove('correct'), 150);
+                    return;
+                }
+
+                // Partial match — just highlight
+                const partial = getTargetCar(typed);
+                if (partial) {
+                    input.classList.remove('wrong');
+                    highlightCars(typed);
+                } else {
+                    // ❌ No match at all — auto-clear immediately
+                    input.classList.add('wrong');
+                    setTimeout(() => {
+                        input.classList.remove('wrong');
+                        input.value = '';               // ← AUTO-CLEAR HERE (FIX 1)
+                        highlightCars('');
+                    }, 350);
+                }
+            });
+
+            input.addEventListener('keydown', e => {
+                // Space = submit current word
+                if (e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                    if (!gameRunning) return;
+
+                    const typed = input.value.trim().toLowerCase();
+                    if (!typed) return;
+
+                    const match = activeCars.find(c =>
+                        c.word.toLowerCase() === typed
+                    );
+
+                    if (match) {
+                        destroyCar(match);
+                        input.value = '';
+                    } else {
+                        // Wrong word submitted — penalise combo
+                        combo = 1;
+                        updateHUD();
+                        input.classList.add('wrong');
+
+                        if (typeof WordRacerAudio != 'undefined') {
+                            WordRacerAudio.playWrong();
+                        }
+                        setTimeout(() => {
+                            input.classList.remove('wrong');
+                            input.value = '';               // ← ALSO AUTO-CLEAR HERE (FIX 1)
+                            highlightCars('');
+                        }, 350);
+                    }
+                }
+
+                // TAB = use power-up
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    usePowerup();
+                }
+            });
+
+            // ── Spawn Timer ───────────────────────────────────────────────────────────
+            function startSpawn() {
+                if (spawnTimer) clearInterval(spawnTimer);
+                spawnCar(); // immediate first spawn
+                spawnTimer = setInterval(() => {
+                    if (gameRunning) spawnCar();
+                }, getWaveCfg().spawnDelay);
+            }
+
+            function restartSpawn() {
+                startSpawn();
+            }
+
+            // ── Game Loop ─────────────────────────────────────────────────────────────
+            function gameLoop() {
+                if (!gameRunning) return;
+
+                const now      = Date.now();
+                const frozen   = now < frozenUntil;
+
+                [...activeCars].forEach(car => {
+                    if (frozen) return;
+
+                    // Move car
+                    const effectiveSpeed = car.speed * car.slowMod;
+                    car.x += effectiveSpeed;
+                    car.el.style.left = car.x + '%';
+
+                    // Danger zone
+                    const pct = car.x / 100;
+                    if (pct >= DANGER_ZONE) {
+                        car.el.classList.add('danger');
+                    }
+
+                    // Crossed finish line?
+                    if (car.x >= 92) {
+                        missCar(car);
+                    }
+                });
+
+                updateHUD();
+                rafId = requestAnimationFrame(gameLoop);
+            }
+
+            // ── End Game ──────────────────────────────────────────────────────────────
+            function endGame() {
+                if (!gameRunning) return;
+                gameRunning = false;
+                clearInterval(spawnTimer);
+                cancelAnimationFrame(rafId);
+
+                if (typeof WordRacerAudio !== 'undefined') {
+                    WordRacerAudio.playGameOver();
+                    WordRacerAudio.stop();
+                }
+
+                const params = new URLSearchParams({
+                    score:    Math.floor(score),
+                    wave:     wave,
+                    words:    wordsDestroyed,
+                    wpm:      bestWpm,
+                    streak:   bestCombo,
+                    cars:     carsDestroyed,
+                    powerups: powerupsUsed
+                });
+
+                // Short delay so last flash is visible
+                setTimeout(() => {
+                    window.location.href = `/WordRacer/Results?${params.toString()}`;
+                }, 800);
+            }
+
+            // ── Start ─────────────────────────────────────────────────────────────────
+            function startGame() {
+                document.getElementById('start-screen').style.display = 'none';
+
+                lives          = STARTING_LIVES;
+                score          = 0;
+                wave           = 1;
+                wordsDestroyed = 0;
+                carsDestroyed  = 0;
+                combo          = 1;
+                bestCombo      = 1;
+                keystrokes     = 0;
+                bestWpm        = 0;
+                gameRunning    = true;
+                gameStartTime  = Date.now();
+                activeCars     = [];
+                laneOccupied   = [false, false, false];
+                carIdCounter   = 0;
+                powerup        = null;
+                powerupsUsed   = 0;
+                slowActive     = false;
+                frozenUntil    = 0;
+
+                if (typeof WordRacerAudio !== 'undefined') {
+                    WordRacerAudio.playStart();
+                    // Start engine after countdown (1.7s delay)
+                    setTimeout(() => WordRacerAudio.startEngine(1), 1700);
+                }
+
+                setPowerup(null);
+                updateHUD();
+                showWaveBanner(1);
+                startSpawn();
+                rafId = requestAnimationFrame(gameLoop);
+                input.focus();
+            }
+
+            // ── Mute Handler ──────────────────────────────────────────────────────────
+            function handleMute() {
+                if (typeof WordRacerAudio === 'undefined') return;
+                const muted = WordRacerAudio.toggleMute();
+                document.getElementById('mute-btn').textContent = muted ? '🔇' : '🔊';
+            }
+
+            // ── Power-up box click ────────────────────────────────────────────────────
+            powerupBox.addEventListener('click', usePowerup);
+
+            // ── Init ──────────────────────────────────────────────────────────────────
+            document.getElementById('start-btn')
+                .addEventListener('click', startGame);
+
+        })();
+    </script>
+</body>
+</html>
+```
+
+---

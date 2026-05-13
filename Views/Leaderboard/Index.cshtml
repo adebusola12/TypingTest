@@ -1,0 +1,637 @@
+﻿@model TypingTest.ViewModels.LeaderboardViewModel
+@{
+    ViewData["Title"] = "Leaderboard";
+}
+
+@section Styles {
+    <style>
+        .lb-wrap {
+            max-width: 860px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+            font-family: monospace;
+        }
+
+        /* ── Page header ─────────────────────────────────────────────────────── */
+        .lb-header {
+            margin-bottom: 2rem;
+        }
+
+        .lb-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #00e5ff;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.25rem;
+        }
+
+        .lb-subtitle {
+            font-size: 0.72rem;
+            color: #334455;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+        }
+
+        /* ── Tab bar ─────────────────────────────────────────────────────────── */
+        .lb-tabs {
+            display: flex;
+            gap: 1px;
+            background: rgba(0,229,255,0.08);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(0,229,255,0.1);
+        }
+
+        .lb-tab {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            background: #0d1520;
+            color: #445566;
+            font-family: monospace;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+            .lb-tab:hover {
+                background: rgba(0,229,255,0.05);
+                color: #667788;
+            }
+
+            .lb-tab.active {
+                background: rgba(0,229,255,0.08);
+                color: #00e5ff;
+                border-bottom: 2px solid #00e5ff;
+            }
+
+        /* ── Filters (typing test only) ──────────────────────────────────────── */
+        .lb-filters {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+
+        .lb-filter {
+            font-size: 0.65rem;
+            font-family: monospace;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 5px 14px;
+            border-radius: 4px;
+            text-decoration: none;
+            border: 1px solid rgba(0,229,255,0.15);
+            color: #445566;
+            background: transparent;
+            transition: all 0.2s;
+        }
+
+            .lb-filter:hover {
+                border-color: rgba(0,229,255,0.4);
+                color: #00e5ff;
+            }
+
+            .lb-filter.active {
+                border-color: #00e5ff;
+                color: #00e5ff;
+                background: rgba(0,229,255,0.06);
+            }
+
+        .filter-sep {
+            color: #1a2233;
+            align-self: center;
+            font-size: 0.8rem;
+        }
+
+        /* ── Table ───────────────────────────────────────────────────────────── */
+        .lb-table-wrap {
+            background: #0d1520;
+            border: 1px solid rgba(0,229,255,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead tr {
+            background: rgba(0,229,255,0.04);
+            border-bottom: 1px solid rgba(0,229,255,0.08);
+        }
+
+        th {
+            padding: 0.75rem 1rem;
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: #334455;
+            text-align: left;
+            font-weight: 700;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid rgba(0,229,255,0.05);
+            transition: background 0.15s;
+        }
+
+            tbody tr:last-child {
+                border-bottom: none;
+            }
+
+            tbody tr:hover {
+                background: rgba(0,229,255,0.03);
+            }
+
+            /* Highlight current user */
+            tbody tr.current-user {
+                background: rgba(0,229,255,0.06);
+            }
+
+                tbody tr.current-user td {
+                    color: #00e5ff;
+                }
+
+        td {
+            padding: 0.85rem 1rem;
+            font-size: 0.82rem;
+            color: #778899;
+        }
+
+        /* Rank badges */
+        .rank-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .rank-1 {
+            background: rgba(255,215,0,0.12);
+            color: #ffd700;
+            border: 1px solid rgba(255,215,0,0.3);
+        }
+
+        .rank-2 {
+            background: rgba(192,192,192,0.1);
+            color: #c0c0c0;
+            border: 1px solid rgba(192,192,192,0.25);
+        }
+
+        .rank-3 {
+            background: rgba(205,127,50,0.1);
+            color: #cd7f32;
+            border: 1px solid rgba(205,127,50,0.25);
+        }
+
+        .rank-n {
+            background: rgba(0,229,255,0.04);
+            color: #445566;
+            border: 1px solid rgba(0,229,255,0.08);
+        }
+
+        .player-name {
+            font-weight: 700;
+            color: #aabbcc;
+        }
+
+        .score-val {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #00e5ff;
+        }
+
+        .stat-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.65rem;
+            color: #445566;
+            background: rgba(0,229,255,0.04);
+            border: 1px solid rgba(0,229,255,0.08);
+            border-radius: 3px;
+            padding: 2px 8px;
+        }
+
+        /* ── Empty state ─────────────────────────────────────────────────────── */
+        .lb-empty {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #334455;
+        }
+
+        .lb-empty-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .lb-empty-text {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 1.5rem;
+        }
+
+        /* ── Pagination ──────────────────────────────────────────────────────── */
+        .lb-pagination {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+            align-items: center;
+        }
+
+        .lb-page-btn {
+            padding: 0.5rem 1.2rem;
+            background: transparent;
+            border: 1px solid rgba(0,229,255,0.15);
+            border-radius: 4px;
+            color: #00e5ff;
+            font-family: monospace;
+            font-size: 0.75rem;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+            .lb-page-btn:hover {
+                border-color: rgba(0,229,255,0.4);
+            }
+
+        .lb-page-info {
+            font-size: 0.7rem;
+            color: #334455;
+            letter-spacing: 0.1em;
+        }
+
+        /* ── You badge ───────────────────────────────────────────────────────── */
+        .you-badge {
+            font-size: 0.55rem;
+            background: rgba(0,229,255,0.1);
+            border: 1px solid rgba(0,229,255,0.25);
+            color: #00e5ff;
+            border-radius: 3px;
+            padding: 1px 6px;
+            margin-left: 6px;
+            vertical-align: middle;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        @@media (max-width: 600px) {
+            .lb-tabs {
+                flex-wrap: wrap;
+            }
+
+            .lb-tab {
+                flex: 1 1 45%;
+                font-size: 0.65rem;
+            }
+
+            th, td {
+                padding: 0.6rem 0.6rem;
+            }
+
+            .stat-pill {
+                display: none;
+            }
+        }
+    </style>
+}
+
+<div class="lb-wrap">
+
+    <!-- Header -->
+    <div class="lb-header">
+        <div class="lb-title">◈ Ranks</div>
+        <div class="lb-subtitle">// global leaderboard — top scores per game</div>
+    </div>
+
+    <!-- Tab bar -->
+    <div class="lb-tabs">
+        <a href="/Leaderboard?tab=typing"
+           class="lb-tab @(Model.ActiveTab == "typing" ? "active" : "")">
+            ▶ Typing Test
+        </a>
+        <a href="/Leaderboard?tab=sniper"
+           class="lb-tab @(Model.ActiveTab == "sniper" ? "active" : "")">
+            ◎ Word Sniper
+        </a>
+        <a href="/Leaderboard?tab=worddrop"
+           class="lb-tab @(Model.ActiveTab == "worddrop" ? "active" : "")">
+            ⚔ Word Drop
+        </a>
+        <a href="/Leaderboard?tab=chain"
+           class="lb-tab @(Model.ActiveTab == "chain" ? "active" : "")">
+            ⛓ Chain Mode
+        </a>
+    </div>
+
+    <!-- ── TYPING TEST TAB ──────────────────────────────────────────────── -->
+    @if (Model.ActiveTab == "typing")
+    {
+        <!-- Filters -->
+        <div class="lb-filters">
+            <a href="/Leaderboard?tab=typing"
+               class="lb-filter @(Model.FilterDifficulty == null && Model.FilterMode == null ? "active" : "")">
+                All
+            </a>
+            <a href="/Leaderboard?tab=typing&difficulty=0"
+               class="lb-filter @(Model.FilterDifficulty == TypingTest.Models.DifficultyLevel.Easy ? "active" : "")">
+                Easy
+            </a>
+            <a href="/Leaderboard?tab=typing&difficulty=1"
+               class="lb-filter @(Model.FilterDifficulty == TypingTest.Models.DifficultyLevel.Medium ? "active" : "")">
+                Medium
+            </a>
+            <a href="/Leaderboard?tab=typing&difficulty=2"
+               class="lb-filter @(Model.FilterDifficulty == TypingTest.Models.DifficultyLevel.Hard ? "active" : "")">
+                Hard
+            </a>
+            <span class="filter-sep">|</span>
+            <a href="/Leaderboard?tab=typing&mode=0"
+               class="lb-filter @(Model.FilterMode == TypingTest.Models.TestMode.Timed ? "active" : "")">
+                Timed
+            </a>
+            <a href="/Leaderboard?tab=typing&mode=1"
+               class="lb-filter @(Model.FilterMode == TypingTest.Models.TestMode.WordCount ? "active" : "")">
+                Word Count
+            </a>
+        </div>
+
+        @if (!Model.Entries.Any())
+        {
+            <div class="lb-table-wrap">
+                <div class="lb-empty">
+                    <div class="lb-empty-icon">◈</div>
+                    <div class="lb-empty-text">No results yet — be the first on the board!</div>
+                    <a asp-controller="Test" asp-action="Index"
+                       style="display:inline-flex; align-items:center; gap:8px; background:#00e5ff;
+                                      color:#000; font-family:monospace; font-size:0.8rem; font-weight:700;
+                                      text-transform:uppercase; letter-spacing:0.12em; padding:0.75rem 2rem;
+                                      border-radius:6px; text-decoration:none;">
+                        ▶ Start Typing
+                    </a>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="lb-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Player</th>
+                            <th>WPM</th>
+                            <th>Accuracy</th>
+                            <th>Difficulty</th>
+                            <th>When</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var entry in Model.Entries)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="rank-badge @(entry.Rank == 1 ? "rank-1" : entry.Rank == 2 ? "rank-2" : entry.Rank == 3 ? "rank-3" : "rank-n")">
+                                        @entry.Rank
+                                    </span>
+                                </td>
+                                <td class="player-name">@entry.DisplayName</td>
+                                <td><span class="score-val">@entry.Wpm</span></td>
+                                <td style="color:#00ff88">@entry.AccuracyDisplay</td>
+                                <td>
+                                    <span class="stat-pill">@entry.Difficulty</span>
+                                </td>
+                                <td>@entry.TimeAgo</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.TotalPages > 1)
+            {
+                <div class="lb-pagination">
+                    @if (Model.HasPreviousPage)
+                    {
+                        <a href="/Leaderboard?tab=typing&page=@(Model.PageNumber - 1)" class="lb-page-btn">← Prev</a>
+                    }
+                    <span class="lb-page-info">Page @Model.PageNumber of @Model.TotalPages</span>
+                    @if (Model.HasNextPage)
+                    {
+                        <a href="/Leaderboard?tab=typing&page=@(Model.PageNumber + 1)" class="lb-page-btn">Next →</a>
+                    }
+                </div>
+            }
+        }
+    }
+
+    <!-- ── WORD SNIPER TAB ──────────────────────────────────────────────── -->
+    @if (Model.ActiveTab == "sniper")
+    {
+        @if (!Model.SniperEntries.Any())
+        {
+            <div class="lb-table-wrap">
+                <div class="lb-empty">
+                    <div class="lb-empty-icon">◎</div>
+                    <div class="lb-empty-text">No scores yet — be the first sniper!</div>
+                    <a asp-controller="WordSniper" asp-action="Play"
+                       style="display:inline-flex; align-items:center; gap:8px; background:#00e5ff;
+                                      color:#000; font-family:monospace; font-size:0.8rem; font-weight:700;
+                                      text-transform:uppercase; letter-spacing:0.12em; padding:0.75rem 2rem;
+                                      border-radius:6px; text-decoration:none;">
+                        ▶ Play Now
+                    </a>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="lb-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Player</th>
+                            <th>Score</th>
+                            <th>Best WPM</th>
+                            <th>Best Streak</th>
+                            <th>Words Hit</th>
+                            <th>When</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var entry in Model.SniperEntries)
+                        {
+                            <tr class="@(entry.IsCurrentUser ? "current-user" : "")">
+                                <td>
+                                    <span class="rank-badge @(entry.Rank == 1 ? "rank-1" : entry.Rank == 2 ? "rank-2" : entry.Rank == 3 ? "rank-3" : "rank-n")">
+                                        @entry.Rank
+                                    </span>
+                                </td>
+                                <td class="player-name">
+                                    @entry.DisplayName
+                                    @if (entry.IsCurrentUser)
+                                    {
+                                        <span class="you-badge">You</span>
+                                    }
+                                </td>
+                                <td><span class="score-val">@entry.Score.ToString("N0")</span></td>
+                                <td>@entry.BestWpm <span style="font-size:0.65rem; color:#334455;">wpm</span></td>
+                                <td>@entry.BestStreak</td>
+                                <td>@entry.Words</td>
+                                <td>@entry.TimeAgo</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+
+    <!-- ── WORD DROP TAB ────────────────────────────────────────────────── -->
+    @if (Model.ActiveTab == "worddrop")
+    {
+        @if (!Model.WordDropEntries.Any())
+        {
+            <div class="lb-table-wrap">
+                <div class="lb-empty">
+                    <div class="lb-empty-icon">⚔</div>
+                    <div class="lb-empty-text">No scores yet — survive the first wave!</div>
+                    <a asp-controller="WordDrop" asp-action="Play"
+                       style="display:inline-flex; align-items:center; gap:8px; background:#00e5ff;
+                                      color:#000; font-family:monospace; font-size:0.8rem; font-weight:700;
+                                      text-transform:uppercase; letter-spacing:0.12em; padding:0.75rem 2rem;
+                                      border-radius:6px; text-decoration:none;">
+                        ▶ Play Now
+                    </a>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="lb-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Player</th>
+                            <th>Score</th>
+                            <th>Wave</th>
+                            <th>Words</th>
+                            <th>Best WPM</th>
+                            <th>When</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var entry in Model.WordDropEntries)
+                        {
+                            <tr class="@(entry.IsCurrentUser ? "current-user" : "")">
+                                <td>
+                                    <span class="rank-badge @(entry.Rank == 1 ? "rank-1" : entry.Rank == 2 ? "rank-2" : entry.Rank == 3 ? "rank-3" : "rank-n")">
+                                        @entry.Rank
+                                    </span>
+                                </td>
+                                <td class="player-name">
+                                    @entry.DisplayName
+                                    @if (entry.IsCurrentUser)
+                                    {
+                                        <span class="you-badge">You</span>
+                                    }
+                                </td>
+                                <td><span class="score-val">@entry.Score.ToString("N0")</span></td>
+                                <td>@entry.Wave</td>
+                                <td>@entry.Words</td>
+                                <td>@entry.BestWpm <span style="font-size:0.65rem; color:#334455;">wpm</span></td>
+                                <td>@entry.TimeAgo</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+
+    <!-- ── CHAIN MODE TAB ───────────────────────────────────────────────── -->
+    @if (Model.ActiveTab == "chain")
+    {
+        @if (!Model.ChainEntries.Any())
+        {
+            <div class="lb-table-wrap">
+                <div class="lb-empty">
+                    <div class="lb-empty-icon">⛓</div>
+                    <div class="lb-empty-text">No scores yet — start the chain!</div>
+                    <a asp-controller="ChainMode" asp-action="Play"
+                       style="display:inline-flex; align-items:center; gap:8px; background:#00e5ff;
+                                      color:#000; font-family:monospace; font-size:0.8rem; font-weight:700;
+                                      text-transform:uppercase; letter-spacing:0.12em; padding:0.75rem 2rem;
+                                      border-radius:6px; text-decoration:none;">
+                        ▶ Play Now
+                    </a>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="lb-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Player</th>
+                            <th>Score</th>
+                            <th>Best Chain</th>
+                            <th>Perfects</th>
+                            <th>Words</th>
+                            <th>Best WPM</th>
+                            <th>When</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var entry in Model.ChainEntries)
+                        {
+                            <tr class="@(entry.IsCurrentUser ? "current-user" : "")">
+                                <td>
+                                    <span class="rank-badge @(entry.Rank == 1 ? "rank-1" : entry.Rank == 2 ? "rank-2" : entry.Rank == 3 ? "rank-3" : "rank-n")">
+                                        @entry.Rank
+                                    </span>
+                                </td>
+                                <td class="player-name">
+                                    @entry.DisplayName
+                                    @if (entry.IsCurrentUser)
+                                    {
+                                        <span class="you-badge">You</span>
+                                    }
+                                </td>
+                                <td><span class="score-val">@entry.Score.ToString("N0")</span></td>
+                                <td>@entry.BestStreak</td>
+                                <td style="color:#00ff88">@entry.PerfectHits</td>
+                                <td>@entry.Words</td>
+                                <td>@entry.BestWpm <span style="font-size:0.65rem; color:#334455;">wpm</span></td>
+                                <td>@entry.TimeAgo</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+
+</div>

@@ -1,0 +1,55 @@
+﻿@{
+    ViewData["Title"] = "Word Drop";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div style="min-height: 80vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 3rem 1.5rem;">
+
+    <h1 style="font-family: monospace; font-size: clamp(2.5rem, 8vw, 5rem); font-weight: 700; color: #00e5ff; text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 0.5rem 0; line-height: 1.1;">
+        Word Drop
+    </h1>
+
+    <p style="font-family: monospace; color: #8899aa; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.15em; margin: 0 0 1.5rem 0;">
+        Warm up your fingers. Survive the waves.
+    </p>
+
+    <p style="color: #aabbcc; font-family: monospace; font-size: 0.95rem; max-width: 520px; line-height: 1.8; margin: 0 0 3rem 0;">
+        Words fall from the top of the screen — type them before they reach the bottom.
+        Each miss costs a life. Survive as many waves as you can.
+    </p>
+
+    {{!-- Stats row --}}
+    <div style="display: flex; gap: 1px; background: #1a2233; border-radius: 12px; overflow: hidden; margin-bottom: 3rem; width: 100%; max-width: 480px;">
+        <div style="flex: 1; background: #0d1520; padding: 1.25rem 1rem;">
+            <div style="font-family: monospace; font-size: 1.75rem; font-weight: 700; color: #00e5ff;">@TypingTest.Services.WordDropService.StartingLives</div>
+            <div style="font-family: monospace; font-size: 0.7rem; color: #556677; text-transform: uppercase; letter-spacing: 0.12em; margin-top: 4px;">Starting lives</div>
+        </div>
+        <div style="flex: 1; background: #0d1520; padding: 1.25rem 1rem;">
+            <div style="font-family: monospace; font-size: 1.75rem; font-weight: 700; color: #00e5ff;">&#8734;</div>
+            <div style="font-family: monospace; font-size: 0.7rem; color: #556677; text-transform: uppercase; letter-spacing: 0.12em; margin-top: 4px;">Waves</div>
+        </div>
+        <div style="flex: 1; background: #0d1520; padding: 1.25rem 1rem;">
+            <div style="font-family: monospace; font-size: 1.75rem; font-weight: 700; color: #00e5ff;">Free</div>
+            <div style="font-family: monospace; font-size: 0.7rem; color: #556677; text-transform: uppercase; letter-spacing: 0.12em; margin-top: 4px;">Mode</div>
+        </div>
+    </div>
+
+    {{!-- Buttons --}}
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+        <a asp-action="Play"
+           style="display: inline-flex; align-items: center; gap: 10px; background: #00e5ff; color: #000; font-family: monospace; font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; padding: 1rem 2.5rem; border-radius: 8px; text-decoration: none;">
+            &#9658; Play now
+        </a>
+        <a asp-controller="Test" asp-action="Index"
+           style="display: inline-flex; align-items: center; gap: 10px; background: transparent; color: #00e5ff; font-family: monospace; font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; padding: 1rem 2.5rem; border-radius: 8px; border: 2px solid #00e5ff; text-decoration: none;">
+            &#9632; Back to test
+        </a>
+
+        <!-- ✅ ADD THIS -->
+        <a asp-controller="Home" asp-action="Index"
+           style="display: inline-flex; align-items: center; gap: 10px; background: transparent; color: #00e5ff; font-family: monospace; font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; padding: 1rem 2.5rem; border-radius: 8px; border: 2px solid #00e5ff; text-decoration: none;">
+            &#8962; Home
+        </a>
+    </div>
+
+</div>

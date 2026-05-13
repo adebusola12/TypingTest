@@ -1,0 +1,587 @@
+﻿@model TypingTest.ViewModels.TestSessionViewModel
+@{
+    ViewData["Title"] = "Typing Test";
+    Layout = "/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .mobile-block {
+            display: none;
+            text-align: center;
+            padding: 4rem 2rem;
+            font-family: var(--font-mono);
+        }
+
+        .mobile-block-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .mobile-block-title {
+            font-family: var(--font-display);
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        .mobile-block-msg {
+            font-size: 0.85rem;
+            color: var(--text3);
+            letter-spacing: 1px;
+            margin-bottom: 2rem;
+        }
+
+        @@media (max-width: 768px) {
+            .test-arena {
+                display: none;
+            }
+
+            .mobile-block {
+                display: block;
+            }
+        }
+
+        .test-arena {
+            max-width: 860px;
+            margin: 2rem auto;
+        }
+
+        .hud {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .hud-cell {
+            background: var(--surface);
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .hud-value {
+            font-family: var(--font-display);
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--accent);
+            line-height: 1;
+            transition: all 0.2s ease;
+        }
+
+            .hud-value.danger {
+                color: var(--danger);
+            }
+
+            .hud-value.warning {
+                color: var(--warning);
+            }
+
+        .hud-label {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text3);
+            margin-top: 4px;
+        }
+
+        .progress-bar-wrap {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            height: 4px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 100px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .passage-wrap {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .passage-text {
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+            line-height: 1.9;
+            letter-spacing: 0.5px;
+            word-break: break-word;
+            user-select: none;
+        }
+
+        .char {
+            position: relative;
+        }
+
+            .char.correct {
+                color: var(--success);
+            }
+
+            .char.incorrect {
+                color: var(--danger);
+                background: rgba(255,51,102,0.15);
+                border-radius: 2px;
+            }
+
+            .char.current {
+                background: rgba(0,212,255,0.2);
+                border-radius: 2px;
+                animation: blink 1s step-end infinite;
+            }
+
+                .char.current::after {
+                    content: '';
+                    position: absolute;
+                    left: -1px;
+                    top: 0;
+                    bottom: 0;
+                    width: 2px;
+                    background: var(--accent);
+                    animation: blink 1s step-end infinite;
+                }
+
+        @@keyframes blink {
+            0%, 100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
+
+        .type-input {
+            position: absolute;
+            opacity: 0;
+            width: 1px;
+            height: 1px;
+            pointer-events: none;
+        }
+
+        .focus-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(10,10,15,0.85);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 0.75rem;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+            z-index: 10;
+        }
+
+            .focus-overlay.hidden {
+                opacity: 0;
+                pointer-events: none;
+            }
+
+        .focus-icon {
+            font-size: 2rem;
+        }
+
+        .focus-text {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text2);
+            letter-spacing: 2px;
+        }
+
+        .test-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .test-meta {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .stage-indicator {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 0.75rem 1.25rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .stage-name {
+            font-family: var(--font-display);
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--accent);
+        }
+
+        .stage-req {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text3);
+            letter-spacing: 1px;
+        }
+
+        .countdown-flash {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            pointer-events: none;
+        }
+
+        .countdown-num {
+            font-family: var(--font-display);
+            font-size: 10rem;
+            font-weight: 900;
+            color: var(--accent);
+            opacity: 0;
+        }
+
+            .countdown-num.show {
+                animation: countAnim 0.8s ease forwards;
+            }
+
+        @@keyframes countAnim {
+            0% {
+                opacity: 1;
+                transform: scale(1.5);
+            }
+
+            100% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+        }
+    </style>
+}
+
+<div class="mobile-block">
+    <div class="mobile-block-icon">⌨</div>
+    <div class="mobile-block-title">KEYBOARD REQUIRED</div>
+    <div class="mobile-block-msg">// this experience requires a physical keyboard</div>
+    <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">← Go Home</a>
+</div>
+
+<div class="test-arena">
+
+    <!-- Stage indicator -->
+    <div class="stage-indicator">
+        <div>
+            <span style="font-family:var(--font-mono);font-size:0.7rem;color:var(--text3);letter-spacing:1px;">CURRENT STAGE</span>
+            <div class="stage-name">@Model.CurrentStage. @Model.StageName</div>
+        </div>
+        <div class="stage-req">
+            // finish full passage in @Model.DurationSeconds s · min accuracy @Model.MinAccuracy%
+        </div>
+    </div>
+
+    <!-- HUD -->
+    <div class="hud">
+        <div class="hud-cell">
+            <div class="hud-value" id="hud-wpm">0</div>
+            <div class="hud-label">WPM</div>
+        </div>
+        <div class="hud-cell">
+            <div class="hud-value" id="hud-acc">100%</div>
+            <div class="hud-label">Accuracy</div>
+        </div>
+        <div class="hud-cell">
+            <div class="hud-value" id="hud-errors">0</div>
+            <div class="hud-label">Errors</div>
+        </div>
+        <div class="hud-cell">
+            @if (Model.Mode == TypingTest.Models.TestMode.Timed)
+            {
+                <div class="hud-value" id="hud-timer">@Model.DurationSeconds</div>
+                <div class="hud-label">Seconds</div>
+            }
+            else
+            {
+                <div class="hud-value" id="hud-words">0 / @Model.WordCountTarget</div>
+                <div class="hud-label">Words</div>
+            }
+        </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progress-bar"></div>
+    </div>
+
+    <!-- Passage -->
+    <div class="passage-wrap" id="passage-wrap" onclick="focusInput()">
+        <div class="passage-text" id="passage-display"></div>
+        <input class="type-input" id="type-input" type="text"
+               autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+        <div class="focus-overlay" id="focus-overlay">
+            <div class="focus-icon">⌨</div>
+            <div class="focus-text">CLICK TO START TYPING</div>
+        </div>
+    </div>
+
+    <!-- Test footer -->
+    <div class="test-footer">
+        <div class="test-meta">
+            <span class="badge @(Model.Difficulty == TypingTest.Models.DifficultyLevel.Easy ? "badge-easy" : Model.Difficulty == TypingTest.Models.DifficultyLevel.Medium ? "badge-medium" : "badge-hard")">
+                @Model.Difficulty
+            </span>
+            <span class="badge badge-timed">@Model.DurationSeconds s</span>
+        </div>
+        <a asp-controller="Test" asp-action="Index" class="btn btn-secondary">↺ Restart</a>
+    </div>
+</div>
+
+<div class="countdown-flash">
+    <div class="countdown-num" id="countdown-num"></div>
+</div>
+
+<!-- Hidden submit form -->
+<form id="submit-form" method="post" asp-controller="Test" asp-action="Submit">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="PassageId" value="@Model.PassageId" />
+    <input type="hidden" name="Mode" value="@((int)Model.Mode)" />
+    <input type="hidden" name="Difficulty" value="@((int)Model.Difficulty)" />
+    <input type="hidden" name="DurationSeconds" value="@Model.DurationSeconds" />
+    <input type="hidden" name="WordCountTarget" value="@Model.WordCountTarget" />
+    <input type="hidden" name="TotalKeystrokes" id="f-total" />
+    <input type="hidden" name="CorrectKeystrokes" id="f-correct" />
+    <input type="hidden" name="ErrorCount" id="f-errors" />
+    <input type="hidden" name="ElapsedSeconds" id="f-elapsed" />
+    <input type="hidden" name="PassageCompleted" id="f-completed" value="false" />
+    <input type="hidden" name="FinalCorrectChars" id="f-finalcorrect" value="0" />
+    <input type="hidden" name="FinalErrorChars" id="f-finalerrors" value="0" />
+</form>
+
+@section Scripts {
+    <script>
+        const PASSAGE     = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PassageContent));
+        const MODE        = @((int)Model.Mode);
+        const DURATION    = @Model.DurationSeconds;
+        const WORD_TARGET = @Model.WordCountTarget;
+
+        let chars            = [];
+        let currentIndex     = 0;
+        let totalKeys        = 0;   // raw keystrokes (includes mistypes)
+        let correctKeys      = 0;   // correct keystrokes (for WPM)
+        let errors           = 0;   // live error count for HUD display
+        let startTime        = null;
+        let timerInterval    = null;
+        let timeLeft         = DURATION;
+        let started          = false;
+        let finished         = false;
+        let completedPassage = false;
+
+        // Build passage display
+        const display = document.getElementById('passage-display');
+        PASSAGE.split('').forEach((ch, i) => {
+            const span = document.createElement('span');
+            span.classList.add('char');
+            span.textContent  = ch === ' ' ? '\u00A0' : ch;
+            span.dataset.char = ch;
+            if (i === 0) span.classList.add('current');
+            display.appendChild(span);
+            chars.push(span);
+        });
+
+        function focusInput() {
+            document.getElementById('type-input').focus();
+            document.getElementById('focus-overlay').classList.add('hidden');
+            document.getElementById('passage-wrap').style.cursor = 'default';
+        }
+
+        const input = document.getElementById('type-input');
+
+        input.addEventListener('focus', () => {
+            document.getElementById('focus-overlay').classList.add('hidden');
+        });
+
+        input.addEventListener('blur', () => {
+            if (!finished) document.getElementById('focus-overlay').classList.remove('hidden');
+        });
+
+        input.addEventListener('keydown', e => {
+            if (finished) return;
+
+            if (!started) {
+                started   = true;
+                startTime = Date.now();
+                if (MODE === 0) startCountdown();
+            }
+
+            if (e.key === 'Backspace') {
+                e.preventDefault();
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    chars[currentIndex].classList.remove('correct', 'incorrect', 'current');
+                    chars[currentIndex].classList.add('current');
+                    if (currentIndex + 1 < chars.length)
+                        chars[currentIndex + 1].classList.remove('current');
+                    // Recalculate live error count from current char states
+                    errors = chars.filter(c => c.classList.contains('incorrect')).length;
+                }
+                updateHUD();
+                return;
+            }
+
+            if (e.key.length !== 1) return;
+            e.preventDefault();
+            if (currentIndex >= chars.length) return;
+
+            totalKeys++;
+            const expected  = chars[currentIndex].dataset.char;
+            const isCorrect = e.key === expected;
+
+            chars[currentIndex].classList.remove('current');
+            chars[currentIndex].classList.add(isCorrect ? 'correct' : 'incorrect');
+
+            if (isCorrect) correctKeys++;
+            else errors++;
+
+            currentIndex++;
+
+            if (currentIndex < chars.length) {
+                chars[currentIndex].classList.add('current');
+                chars[currentIndex].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+
+            updateHUD();
+            updateProgress();
+
+            if (MODE === 1) {
+                const wordsTyped = PASSAGE.substring(0, currentIndex).trim().split(/\s+/).length;
+                if (wordsTyped >= WORD_TARGET || currentIndex >= chars.length) {
+                    completedPassage = true;
+                    endTest();
+                }
+            }
+
+            if (currentIndex >= chars.length) {
+                completedPassage = true;
+                endTest();
+            }
+        });
+
+        // ── Count final state of each character when test ends ───────────────
+        // This is the key fix — accuracy is based on the FINAL character states
+        // not on raw keystrokes. Corrected mistypes do NOT count against the player.
+        function getFinalCharCounts() {
+            let finalCorrect = 0;
+            let finalErrors  = 0;
+            chars.forEach(c => {
+                if (c.classList.contains('correct'))   finalCorrect++;
+                if (c.classList.contains('incorrect')) finalErrors++;
+            });
+            return { finalCorrect, finalErrors };
+        }
+
+        function updateHUD() {
+            const elapsed = startTime ? (Date.now() - startTime) / 1000 : 0;
+            const wpm     = elapsed > 0 ? Math.round((correctKeys / 5) / (elapsed / 60)) : 0;
+
+            // Live accuracy based on final char states so HUD matches what gets submitted
+            const { finalCorrect, finalErrors } = getFinalCharCounts();
+            const totalFinal = finalCorrect + finalErrors;
+            const acc = totalFinal > 0
+                ? Math.round((finalCorrect / totalFinal) * 100)
+                : 100;
+
+            document.getElementById('hud-wpm').textContent    = wpm;
+            document.getElementById('hud-acc').textContent    = acc + '%';
+            document.getElementById('hud-errors').textContent = finalErrors;
+
+            const timerEl = document.getElementById('hud-timer');
+            if (timerEl) {
+                timerEl.classList.toggle('danger',  timeLeft <= 10);
+                timerEl.classList.toggle('warning', timeLeft > 10 && timeLeft <= 20);
+            }
+
+            if (MODE === 1) {
+                const wordsTyped = PASSAGE.substring(0, currentIndex).trim().split(/\s+/).length;
+                document.getElementById('hud-words').textContent = `${wordsTyped} / ${WORD_TARGET}`;
+            }
+        }
+
+        function updateProgress() {
+            document.getElementById('progress-bar').style.width =
+                ((currentIndex / chars.length) * 100) + '%';
+        }
+
+        function startCountdown() {
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                const el = document.getElementById('hud-timer');
+                if (el) el.textContent = timeLeft;
+                updateHUD();
+                if (timeLeft <= 0) {
+                    completedPassage = false;
+                    endTest();
+                }
+            }, 1000);
+        }
+
+        function flashNumber(n) {
+            const el = document.getElementById('countdown-num');
+            el.textContent = n;
+            el.classList.remove('show');
+            void el.offsetWidth;
+            el.classList.add('show');
+        }
+
+        function endTest() {
+            if (finished) return;
+            finished = true;
+            clearInterval(timerInterval);
+            input.blur();
+
+            const elapsed = completedPassage
+                ? Math.round((Date.now() - startTime) / 1000)
+                : DURATION;
+
+            // Get final character states — corrected mistypes count as correct
+            const { finalCorrect, finalErrors } = getFinalCharCounts();
+
+            document.getElementById('f-total').value        = totalKeys;
+            document.getElementById('f-correct').value      = correctKeys;  // used for WPM
+            document.getElementById('f-errors').value       = finalErrors;  // final uncorrected errors
+            document.getElementById('f-elapsed').value      = elapsed;
+            document.getElementById('f-completed').value    = completedPassage ? 'true' : 'false';
+            document.getElementById('f-finalcorrect').value = finalCorrect;  // used for accuracy
+            document.getElementById('f-finalerrors').value  = finalErrors;   // used for accuracy
+
+            flashNumber('✓');
+            setTimeout(() => document.getElementById('submit-form').submit(), 800);
+        }
+
+        setTimeout(focusInput, 300);
+    </script>
+}
