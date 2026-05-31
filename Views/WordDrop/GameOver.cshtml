@@ -1,0 +1,284 @@
+﻿@model TypingTest.ViewModels.WordDropScoreViewModel
+@{
+    ViewData["Title"] = "Game Over";
+    Layout = null; // Full-screen — bypass shared layout
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Word Drop — TypeX</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100%;
+            min-height: 100vh;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            font-family: 'Share Tech Mono', monospace;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            /* Scanline */
+            body::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                background: repeating-linear-gradient( 0deg, transparent, transparent 2px, rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px );
+                pointer-events: none;
+                z-index: 1;
+            }
+
+        .page {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 520px;
+            padding: 40px 24px 48px;
+            text-align: center;
+            animation: fadeUp 0.5s ease both;
+        }
+
+        @@keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(24px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Title */
+        .go-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(48px, 10vw, 72px);
+            font-weight: 900;
+            color: #ff3355;
+            letter-spacing: 6px;
+            line-height: 1;
+            text-shadow: 0 0 40px rgba(255,51,85,0.6), 0 0 80px rgba(255,51,85,0.25);
+            margin-bottom: 8px;
+        }
+
+        .go-sub {
+            font-size: 10px;
+            letter-spacing: 5px;
+            color: rgba(255,255,255,0.25);
+            text-transform: uppercase;
+            margin-bottom: 36px;
+        }
+
+        /* Stats grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stat-card {
+            border: 1px solid rgba(0,255,170,0.12);
+            background: rgba(0,255,170,0.03);
+            border-radius: 6px;
+            padding: 18px 12px 16px;
+            position: relative;
+            overflow: hidden;
+            animation: cardIn 0.4s ease both;
+        }
+
+            .stat-card:nth-child(1) {
+                animation-delay: 0.10s;
+            }
+
+            .stat-card:nth-child(2) {
+                animation-delay: 0.18s;
+            }
+
+            .stat-card:nth-child(3) {
+                animation-delay: 0.26s;
+            }
+
+            .stat-card:nth-child(4) {
+                animation-delay: 0.34s;
+            }
+
+        @@keyframes cardIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 20%;
+            right: 20%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(0,255,170,0.4), transparent);
+        }
+
+        .stat-label {
+            font-size: 8px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: rgba(0,255,170,0.4);
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 40px;
+            font-weight: 700;
+            color: #00ffaa;
+            text-shadow: 0 0 16px rgba(0,255,170,0.45);
+            line-height: 1;
+        }
+
+        /* Rating */
+        .rating-card {
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 6px;
+            padding: 18px;
+            margin-bottom: 28px;
+            animation: cardIn 0.4s 0.42s ease both;
+        }
+
+        .rating-label {
+            font-size: 8px;
+            letter-spacing: 3px;
+            color: rgba(255,255,255,0.25);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .rating-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 3px;
+        }
+
+        /* Buttons */
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            animation: cardIn 0.4s 0.50s ease both;
+        }
+
+        .btn {
+            padding: 11px 28px;
+            background: transparent;
+            border: 2px solid;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            border-color: #00ffaa;
+            color: #00ffaa;
+            box-shadow: 0 0 16px rgba(0,255,170,0.12);
+        }
+
+            .btn-primary:hover {
+                background: rgba(0,255,170,0.08);
+                box-shadow: 0 0 28px rgba(0,255,170,0.28);
+                text-decoration: none;
+                color: #00ffaa;
+            }
+
+        .btn-ghost {
+            border-color: rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.35);
+        }
+
+            .btn-ghost:hover {
+                border-color: rgba(255,255,255,0.35);
+                color: rgba(255,255,255,0.65);
+                text-decoration: none;
+            }
+    </style>
+</head>
+<body>
+    <div class="page">
+
+        <div class="go-title">GAME<br>OVER</div>
+        <div class="go-sub">your run has ended</div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Final Score</div>
+                <div class="stat-value">@Model.Score</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Wave Reached</div>
+                <div class="stat-value">@Model.Wave</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Words Destroyed</div>
+                <div class="stat-value">@Model.WordsDestroyed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Best WPM</div>
+                <div class="stat-value">@Model.BestWpm</div>
+            </div>
+        </div>
+
+        @{
+            string ratingText;
+            string ratingColor;
+
+            if (Model.Wave >= 8) { ratingText = "LEGENDARY"; ratingColor = "#facc15"; }
+            else if (Model.Wave >= 6) { ratingText = "ELITE"; ratingColor = "#00ffaa"; }
+            else if (Model.Wave >= 4) { ratingText = "SKILLED"; ratingColor = "#7dd3fc"; }
+            else if (Model.Wave >= 2) { ratingText = "AVERAGE"; ratingColor = "#a78bfa"; }
+            else { ratingText = "ROOKIE"; ratingColor = "#ff3355"; }
+        }
+
+        <div class="rating-card">
+            <div class="rating-label">Performance Rating</div>
+            <div class="rating-value" style="color:@ratingColor; text-shadow: 0 0 20px @(ratingColor)66;">
+                @ratingText
+            </div>
+        </div>
+
+        <div class="btn-row">
+            <a href="/Survival" class="btn btn-primary">↺ Play Again</a>
+            <a href="/Test" class="btn btn-ghost">✦ Normal Test</a>
+            <a href="/" class="btn btn-ghost">⌂ Home</a>
+        </div>
+
+    </div>
+</body>
+</html>

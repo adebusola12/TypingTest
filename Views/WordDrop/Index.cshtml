@@ -1,0 +1,1158 @@
+﻿@model TypingTest.ViewModels.WordDropLaunchViewModel
+@{
+    ViewData["Title"] = Model.IsWarmup ? "Word Drop — Warm Up" : "Word Drop";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — TypeX</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            font-family: 'Share Tech Mono', monospace;
+            overflow: hidden;
+        }
+
+        #game-wrapper {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: radial-gradient(ellipse at 50% 0%, #0d1a2e 0%, #0a0a0f 60%);
+        }
+
+            #game-wrapper::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px);
+                pointer-events: none;
+                z-index: 100;
+            }
+
+        /* ── HUD ── */
+        #hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 24px;
+            border-bottom: 1px solid rgba(0,255,170,0.15);
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            z-index: 10;
+            flex-shrink: 0;
+        }
+
+        .hud-block {
+            text-align: center;
+        }
+
+        .hud-label {
+            font-size: 9px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: rgba(0,255,170,0.5);
+            margin-bottom: 2px;
+        }
+
+        .hud-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: #00ffaa;
+            text-shadow: 0 0 12px rgba(0,255,170,0.6);
+        }
+
+        /* Mute button in HUD */
+        #mute-btn {
+            background: none;
+            border: 1px solid rgba(0,255,170,0.2);
+            border-radius: 4px;
+            color: rgba(0,255,170,0.5);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+            #mute-btn:hover {
+                border-color: rgba(0,255,170,0.5);
+            }
+
+        /* Warm-up progress bar in HUD */
+        #warmup-progress-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        #warmup-bar-track {
+            width: 140px;
+            height: 6px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        #warmup-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #facc15, #00ffaa);
+            border-radius: 3px;
+            transition: width 0.4s ease;
+        }
+
+        #warmup-bar-label {
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: rgba(250,204,21,0.7);
+            text-transform: uppercase;
+        }
+
+        #lives-display {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .life-icon {
+            width: 18px;
+            height: 18px;
+            background: #ff3355;
+            clip-path: polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
+            transition: all 0.3s;
+            box-shadow: 0 0 8px rgba(255,51,85,0.8);
+        }
+
+            .life-icon.lost {
+                background: #2a1a1a;
+                box-shadow: none;
+            }
+
+        /* ── Arena ── */
+        #arena {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #danger-line {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,51,85,0.5), transparent);
+        }
+
+        /* ── Words ── */
+        .falling-word {
+            position: absolute;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 15px;
+            color: #7dd3fc;
+            padding: 4px 10px;
+            border: 1px solid rgba(125,211,252,0.3);
+            border-radius: 3px;
+            background: rgba(125,211,252,0.05);
+            white-space: nowrap;
+            text-shadow: 0 0 8px rgba(125,211,252,0.4);
+            cursor: default;
+            user-select: none;
+        }
+
+            .falling-word.targeted {
+                color: #00ffaa;
+                border-color: rgba(0,255,170,0.6);
+                background: rgba(0,255,170,0.08);
+                text-shadow: 0 0 12px rgba(0,255,170,0.8);
+            }
+
+            .falling-word.partial {
+                color: #facc15;
+                border-color: rgba(250,204,21,0.5);
+                background: rgba(250,204,21,0.06);
+            }
+
+            .falling-word.destroyed {
+                animation: explode 0.3s forwards;
+            }
+
+        @@keyframes explode {
+            0% {
+                transform: scale(1.3);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(2.2);
+                opacity: 0;
+            }
+        }
+
+        .falling-word.missed {
+            animation: fadeOut 0.35s forwards;
+        }
+
+        @@keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+        }
+
+        /* ── Input ── */
+        #input-zone {
+            padding: 10px 24px 14px;
+            background: rgba(0,0,0,0.55);
+            border-top: 1px solid rgba(0,255,170,0.1);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #input-prompt {
+            color: rgba(0,255,170,0.5);
+            font-size: 13px;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        #word-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid rgba(0,255,170,0.4);
+            color: #00ffaa;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 20px;
+            outline: none;
+            padding: 4px 8px;
+            caret-color: #00ffaa;
+            text-shadow: 0 0 8px rgba(0,255,170,0.5);
+            transition: border-color 0.2s, color 0.2s;
+        }
+
+            #word-input:focus {
+                border-bottom-color: #00ffaa;
+            }
+
+            #word-input.wrong {
+                color: #ff3355;
+                border-bottom-color: #ff3355;
+                text-shadow: 0 0 8px rgba(255,51,85,0.6);
+                animation: shake 0.3s ease;
+            }
+
+        @@keyframes shake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+
+            20% {
+                transform: translateX(-6px);
+            }
+
+            40% {
+                transform: translateX(6px);
+            }
+
+            60% {
+                transform: translateX(-4px);
+            }
+
+            80% {
+                transform: translateX(4px);
+            }
+        }
+
+        /* ── Wave banner ── */
+        #wave-banner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 36px;
+            font-weight: 900;
+            color: #00ffaa;
+            text-shadow: 0 0 30px rgba(0,255,170,0.9), 0 0 60px rgba(0,255,170,0.4);
+            letter-spacing: 6px;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 20;
+        }
+
+            #wave-banner.show {
+                animation: wavePop 1.8s forwards;
+            }
+
+        @@keyframes wavePop {
+            0% {
+                opacity: 0;
+                transform: translate(-50%,-50%) scale(0.7);
+            }
+
+            20% {
+                opacity: 1;
+                transform: translate(-50%,-50%) scale(1.05);
+            }
+
+            70% {
+                opacity: 1;
+                transform: translate(-50%,-50%) scale(1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translate(-50%,-50%) scale(1);
+            }
+        }
+
+        /* ── Life flash ── */
+        #life-flash {
+            position: fixed;
+            inset: 0;
+            background: rgba(255,51,85,0.15);
+            pointer-events: none;
+            opacity: 0;
+            z-index: 50;
+        }
+
+            #life-flash.flash {
+                animation: lifeFlash 0.5s forwards;
+            }
+
+        @@keyframes lifeFlash {
+            0% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        /* ── Particles ── */
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: particleFly 0.6s forwards;
+        }
+
+        @@keyframes particleFly {
+            0% {
+                opacity: 1;
+                transform: translate(0,0) scale(1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translate(var(--dx), var(--dy)) scale(0);
+            }
+        }
+
+        /* ── Start screen ── */
+        #start-screen {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(10,10,15,0.96);
+            z-index: 30;
+            gap: 14px;
+            padding: 24px;
+            text-align: center;
+        }
+
+            #start-screen h1 {
+                font-family: 'Orbitron', sans-serif;
+                font-size: clamp(28px, 6vw, 52px);
+                font-weight: 900;
+                letter-spacing: 6px;
+                line-height: 1.1;
+            }
+
+        .start-screen-survival h1 {
+            color: #00ffaa;
+            text-shadow: 0 0 30px rgba(0,255,170,0.6);
+        }
+
+        .start-screen-warmup h1 {
+            color: #facc15;
+            text-shadow: 0 0 30px rgba(250,204,21,0.6);
+        }
+
+        .start-tagline {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .start-screen-survival .start-tagline {
+            color: rgba(0,255,170,0.4);
+        }
+
+        .start-screen-warmup .start-tagline {
+            color: rgba(250,204,21,0.5);
+        }
+
+        .start-divider {
+            width: 120px;
+            height: 1px;
+            margin: 4px auto;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+        }
+
+        .start-rules {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            max-width: 440px;
+        }
+
+        .start-rule {
+            font-size: 12px;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.4);
+            line-height: 1.6;
+        }
+
+            .start-rule .hl-green {
+                color: #00ffaa;
+                font-weight: bold;
+            }
+
+            .start-rule .hl-yellow {
+                color: #facc15;
+                font-weight: bold;
+            }
+
+            .start-rule .hl-red {
+                color: #ff3355;
+                font-weight: bold;
+            }
+
+        #start-btn {
+            margin-top: 10px;
+            padding: 13px 48px;
+            background: transparent;
+            border: 2px solid;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            border-radius: 2px;
+        }
+
+        .start-screen-survival #start-btn {
+            border-color: #00ffaa;
+            color: #00ffaa;
+            box-shadow: 0 0 20px rgba(0,255,170,0.15);
+        }
+
+            .start-screen-survival #start-btn:hover {
+                background: rgba(0,255,170,0.08);
+                box-shadow: 0 0 36px rgba(0,255,170,0.35);
+            }
+
+        .start-screen-warmup #start-btn {
+            border-color: #facc15;
+            color: #facc15;
+            box-shadow: 0 0 20px rgba(250,204,21,0.15);
+        }
+
+            .start-screen-warmup #start-btn:hover {
+                background: rgba(250,204,21,0.08);
+                box-shadow: 0 0 36px rgba(250,204,21,0.3);
+            }
+
+        /* ── Warmup complete overlay ── */
+        #warmup-complete {
+            position: absolute;
+            inset: 0;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(10,10,15,0.97);
+            z-index: 40;
+            gap: 16px;
+            padding: 24px;
+            text-align: center;
+        }
+
+            #warmup-complete.show {
+                display: flex;
+                animation: fadeIn 0.5s ease;
+            }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .wc-icon {
+            font-size: 56px;
+        }
+
+        .wc-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(22px,5vw,36px);
+            font-weight: 900;
+            color: #00ffaa;
+            letter-spacing: 4px;
+            text-shadow: 0 0 24px rgba(0,255,170,0.6);
+        }
+
+        .wc-body {
+            font-size: 13px;
+            color: rgba(255,255,255,0.45);
+            letter-spacing: 1px;
+            line-height: 1.8;
+            max-width: 400px;
+        }
+
+            .wc-body strong {
+                color: #00ffaa;
+            }
+
+        .wc-stats {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            margin: 4px 0;
+        }
+
+        .wc-stat {
+            text-align: center;
+        }
+
+        .wc-stat-val {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: #facc15;
+            text-shadow: 0 0 12px rgba(250,204,21,0.5);
+        }
+
+        .wc-stat-lbl {
+            font-size: 9px;
+            letter-spacing: 3px;
+            color: rgba(255,255,255,0.3);
+            text-transform: uppercase;
+        }
+
+        .btn-retry {
+            margin-top: 6px;
+            padding: 14px 48px;
+            background: rgba(0,255,170,0.08);
+            border: 2px solid #00ffaa;
+            border-radius: 3px;
+            color: #00ffaa;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            box-shadow: 0 0 20px rgba(0,255,170,0.2);
+        }
+
+            .btn-retry:hover {
+                background: rgba(0,255,170,0.15);
+                box-shadow: 0 0 36px rgba(0,255,170,0.4);
+                color: #00ffaa;
+                text-decoration: none;
+            }
+    </style>
+</head>
+<body>
+    <div id="game-wrapper">
+
+        <div id="life-flash"></div>
+
+        <!-- HUD -->
+        <div id="hud">
+            <div class="hud-block">
+                <div class="hud-label">Score</div>
+                <div class="hud-value" id="hud-score">0</div>
+            </div>
+            <div class="hud-block">
+                <div class="hud-label">Lives</div>
+                <div id="lives-display">
+                    <div class="life-icon" id="life-1"></div>
+                    <div class="life-icon" id="life-2"></div>
+                    <div class="life-icon" id="life-3"></div>
+                </div>
+            </div>
+
+            @if (Model.IsWarmup)
+            {
+                <div class="hud-block" id="warmup-progress-wrap">
+                    <div id="warmup-bar-label">Warm-Up Progress</div>
+                    <div id="warmup-bar-track">
+                        <div id="warmup-bar-fill"></div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="hud-block">
+                    <div class="hud-label">Wave</div>
+                    <div class="hud-value" id="hud-wave">1</div>
+                </div>
+            }
+
+            <div class="hud-block">
+                <div class="hud-label">Words</div>
+                <div class="hud-value" id="hud-words">0</div>
+            </div>
+            <div class="hud-block">
+                <div class="hud-label">WPM</div>
+                <div class="hud-value" id="hud-wpm">0</div>
+            </div>
+
+            <!-- 🔊 Mute button -->
+            <button id="mute-btn" onclick="toggleMute()">🔊</button>
+        </div>
+
+        <!-- Arena -->
+        <div id="arena">
+            <div id="danger-line"></div>
+            <div id="wave-banner">WAVE 1</div>
+        </div>
+
+        <!-- Input -->
+        <div id="input-zone">
+            <span id="input-prompt">&gt;_</span>
+            <input type="text" id="word-input"
+                   autocomplete="off" autocorrect="off"
+                   autocapitalize="off" spellcheck="false"
+                   placeholder="type words here..." />
+        </div>
+
+        <!-- Start screen -->
+        <div id="start-screen" class="@(Model.IsWarmup ? "start-screen-warmup" : "start-screen-survival")">
+            @if (Model.IsWarmup)
+            {
+                <h1>WARM-UP<br>MODE</h1>
+                <div class="start-tagline">Get ready for Stage @Model.ReturnToStage</div>
+                <div class="start-divider"></div>
+                <div class="start-rules">
+                    <div class="start-rule">Words fall — type them and press <span class="hl-yellow">Space</span> to destroy them</div>
+                    <div class="start-rule">Clear <span class="hl-yellow">Wave 1 &amp; Wave 2</span> to complete the warm-up</div>
+                    <div class="start-rule">Miss a word or type a wrong one — <span class="hl-red">lose a life</span></div>
+                    <div class="start-rule">Complete the warm-up and you'll be sent back to <span class="hl-yellow">retry your stage</span></div>
+                </div>
+            }
+            else
+            {
+                <h1>WORD DROP</h1>
+                <div class="start-tagline">Typing Under Pressure</div>
+                <div class="start-divider"></div>
+                <div class="start-rules">
+                    <div class="start-rule">Words fall — type them and press <span class="hl-green">Space</span> to destroy them</div>
+                    <div class="start-rule">Miss a word when it hits the bottom — <span class="hl-red">lose a life</span></div>
+                    <div class="start-rule">Type a word that doesn't exist on screen — <span class="hl-red">lose a life</span></div>
+                    <div class="start-rule">Words get <span class="hl-green">longer and faster</span> every 10 words</div>
+                    <div class="start-rule">You have <span class="hl-green">3 lives</span> — don't waste them</div>
+                </div>
+            }
+            <div class="start-divider"></div>
+            <button id="start-btn">▶ &nbsp;START</button>
+        </div>
+
+        <!-- Warmup complete overlay -->
+        <div id="warmup-complete">
+            <div class="wc-icon">🔥</div>
+            <div class="wc-title">WARM-UP COMPLETE!</div>
+            <div class="wc-body">
+                Great work! You've sharpened your typing skills.<br>
+                You're now ready to <strong>retry your stage</strong>.
+            </div>
+            <div class="wc-stats">
+                <div class="wc-stat">
+                    <div class="wc-stat-val" id="wc-words">0</div>
+                    <div class="wc-stat-lbl">Words Cleared</div>
+                </div>
+                <div class="wc-stat">
+                    <div class="wc-stat-val" id="wc-wpm">0</div>
+                    <div class="wc-stat-lbl">Best WPM</div>
+                </div>
+            </div>
+            <a href="/Test" class="btn-retry">↩ &nbsp;Go Back &amp; Try Again</a>
+        </div>
+
+    </div>
+
+    <!-- Hidden form — warmup only -->
+    <form id="gameover-form" method="post"
+          action="@Url.Action("GameOver", "WordDrop")"
+          style="display:none">
+        @Html.AntiForgeryToken()
+        <input type="hidden" id="f-score" name="Score" />
+        <input type="hidden" id="f-wave" name="Wave" />
+        <input type="hidden" id="f-words" name="WordsDestroyed" />
+        <input type="hidden" id="f-bestwpm" name="BestWpm" />
+        <input type="hidden" id="f-returnstage" name="ReturnToStage"
+               value="@(Model.ReturnToStage?.ToString() ?? "")" />
+        <input type="hidden" id="f-warmupcompleted" name="WarmupCompleted" value="false" />
+    </form>
+
+    <!-- 🔊 Audio engine -->
+    <script src="/js/word-drop-audio.js"></script>
+
+    <script>
+        (function () {
+            console.log("🔥 GAME SCRIPT LOADED");
+
+            // ── Config ────────────────────────────────────────────────────────────
+            const IS_WARMUP        = @Html.Raw(Model.IsWarmup ? "true" : "false");
+            const WARMUP_WAVES_REQ = @Model.WarmupWavesRequired;
+
+            // ── Word lists ────────────────────────────────────────────────────────
+            const WORDS = {
+                easy: [
+                    'cat','dog','run','sun','map','cup','hat','car','box','red',
+                    'blue','tree','book','fish','bird','rain','snow','moon','star','hand',
+                    'game','time','home','road','fire','wind','door','word','jump','ball',
+                    'cool','fast','slow','rock','sand','leaf','city','lamp','boat','drum',
+                    'frog','gift','gold','hill','iron','kite','lake','mist','nest','pine',
+                    'rose','tide','fox','bell','cake','dark','edge','face','gate','hope',
+                    'idea','joke','king','love','milk','name','open','park','quit','rain',
+                    'salt','talk','used','view','walk','exam','yard','zone','army','bank',
+                    'coal','deal','earn','fact','glad','harm','inch','jail','keen','land',
+                    'mark','navy','oath','pace','rack','safe','task','unit','vast','warn',
+                    'axis','barn','clip','damp','earl','fame','gaze','halt','icon','java',
+                    'knot','lace','maze','noon','oval','peak','quiz','reef','stem','tray',
+                    'urge','vein','wax','yell','aged','bold','calm','dear','each','felt',
+                    'grip','herd','itch','jolt','kick','limp','mild','numb','once','plus',
+                    'rage','shed','tame','ugly','vice','wide','yarn','zeal','ache','bite'
+                ],
+                medium: [
+                    'river','cloud','stone','flame','brave','sharp','swift','night','storm','grasp',
+                    'piano','light','orbit','chaos','frost','blaze','crown','crisp','castle','bridge',
+                    'silver','forest','mirror','rocket','falcon','shield','sprint','beacon','gravel',
+                    'marble','plunge','trench','frenzy','riddle','cobalt','dagger','herald','jester',
+                    'lantern','mosaic','portal','rumble','sculpt','tangle','vanish','hunter','fossil',
+                    'planet','flower','ground','health','island','jumper','kitten','lemon','mango',
+                    'napkin','oyster','pillow','rabbit','salmon','tunnel','wallet','yellow','zipper',
+                    'anchor','bottle','candle','desert','engine','fabric','garden','harbor','insect',
+                    'jungle','kennel','ladder','meadow','noodle','otter','pepper','quiver','rubber',
+                    'saddle','teapot','umpire','velvet','walnut','yogurt','breeze','circle','damage',
+                    'effort','finger','goblin','hamlet','impact','jewel','kettle','liquid','muffin',
+                    'neatly','orange','parrot','quartz','rescue','signal','timber','useful','vendor',
+                    'wisdom','exempt','factor','gadget','handle','ignore','jigsaw','locket','mortal',
+                    'output','pencil','racial','submit','talent','unlock','vacant','wonder','abroad',
+                    'belong','carbon','dollar','escape','famine','gloves','hammer','insane','jacket'
+                ],
+                hard: [
+                    'beautiful','wonderful','important','different','something','everything','together',
+                    'questions','sometimes','carefully','dangerous','chocolate','adventure','surprised',
+                    'butterfly','memories','knowledge','hospital','movement','happened','birthday',
+                    'following','mountains','necessary','probably','children','complete','possible',
+                    'gradually','problems','suddenly','thinking','whatever','yourself','changing',
+                    'breakfast','calendar','champion','colorful','complete','confused','consider',
+                    'delicious','disaster','discover','domestic','educate','enormous','envelope',
+                    'everyone','excellent','exercise','familiar','fantastic','favorite','feeling',
+                    'football','forgiven','fourteen','generous','grateful','guidance','handsome',
+                    'happened','hardship','homework','honestly','hopeless','hundreds','identity',
+                    'imagined','improve','innocent','instance','jealousy','judgment','keyboard',
+                    'kindness','language','laughter','learning','listening','lonesome','magazine',
+                    'majority','marathon','marriage','medicine','midnight','military','minister',
+                    'moderate','momentum','moreover','multiply','neighbor','notebook','numerous',
+                    'observed','official','opposite','ordinary','overcome','password','patience',
+                    'peaceful','personal','physical','platform','positive','possible','practice',
+                    'pressure','princess','probably','progress','promised','properly','question',
+                    'realized','recovery','remember','replaced','research','resolved','response',
+                    'romantic','schedule','sentence','separate','shoulder','simplest','sleeping',
+                    'somebody','standing','stranger','strength','struggle','students','sunlight',
+                    'surprise','together','tomorrow','touching','treasure','troubled','ultimate',
+                    'umbrella','uncommon','vacation','valuable','wandered','watching','whatever',
+                    'wildlife','adventure','afternoon','agreement','attention','atmosphere',
+                    'awareness','background','beautiful','behaviour','certainly','challenge',
+                    'character','childhood','community','completed','confusion','connected',
+                    'convinced','correctly','countless','dangerous','dedicated','defeated'
+                ]
+            };
+
+            const WAVE_CONFIG = [
+                null,
+                { pool: 'easy',   speed: 0.30, spawnMs: 3000, maxOnScreen: 2 },
+                { pool: 'easy',   speed: 0.45, spawnMs: 2600, maxOnScreen: 2 },
+                { pool: 'medium', speed: 0.60, spawnMs: 2200, maxOnScreen: 3 },
+                { pool: 'medium', speed: 0.75, spawnMs: 2000, maxOnScreen: 3 },
+                { pool: 'medium', speed: 0.90, spawnMs: 1800, maxOnScreen: 4 },
+                { pool: 'hard',   speed: 1.05, spawnMs: 1600, maxOnScreen: 4 },
+                { pool: 'hard',   speed: 1.25, spawnMs: 1300, maxOnScreen: 5 },
+                { pool: 'hard',   speed: 1.50, spawnMs: 1100, maxOnScreen: 5 },
+            ];
+
+            const WORDS_PER_WAVE  = 10;
+            const STARTING_LIVES  = 3;
+            const WORD_HEIGHT_EST = 34;
+
+            // ── State ─────────────────────────────────────────────────────────────
+            let lives = STARTING_LIVES, score = 0, wave = 1;
+            let wordsDestroyed = 0, bestWpm = 0, gameRunning = false;
+            let activeWords = [], spawnTimer = null, rafId = null;
+            let keystrokes = 0, gameStartTime = 0, wrongClearTimer = null;
+
+            // ── DOM ───────────────────────────────────────────────────────────────
+            const arena       = document.getElementById('arena');
+            const input       = document.getElementById('word-input');
+            const hudScore    = document.getElementById('hud-score');
+            const hudWave     = document.getElementById('hud-wave');
+            const hudWords    = document.getElementById('hud-words');
+            const hudWpm      = document.getElementById('hud-wpm');
+            const waveBanner  = document.getElementById('wave-banner');
+            const lifeFlash   = document.getElementById('life-flash');
+            const startScreen = document.getElementById('start-screen');
+            const startBtn    = document.getElementById('start-btn');
+            const warmupDone  = document.getElementById('warmup-complete');
+            const warmupBar   = document.getElementById('warmup-bar-fill');
+
+            // ── Mute ─────────────────────────────────────────────────────────────
+            function toggleMute() {
+                    if (typeof WordDropAudio === 'undefined') return;
+                    const muted = WordDropAudio.toggleMute();
+                    document.getElementById('mute-btn').textContent = muted ? '🔇' : '🔊';
+            }
+
+            // ── Helpers ───────────────────────────────────────────────────────────
+            function getWaveConfig() {
+                return WAVE_CONFIG[Math.min(wave, WAVE_CONFIG.length - 1)];
+            }
+
+            function randomWord() {
+                const pool = WORDS[getWaveConfig().pool];
+                return pool[Math.floor(Math.random() * pool.length)];
+            }
+
+            function safeX(wordEl) {
+                const wordW  = wordEl.offsetWidth;
+                const arenaW = arena.offsetWidth;
+                const pad    = 12;
+                const maxX   = arenaW - wordW - pad;
+                if (maxX <= pad) return pad;
+                return Math.floor(Math.random() * (maxX - pad)) + pad;
+            }
+
+            function updateHud() {
+                hudScore.textContent = score;
+                if (hudWave) hudWave.textContent = wave;
+                hudWords.textContent = wordsDestroyed;
+                const elapsed = (Date.now() - gameStartTime) / 60000;
+                const wpm = elapsed > 0 ? Math.round((keystrokes / 5) / elapsed) : 0;
+                if (wpm > bestWpm) bestWpm = wpm;
+                hudWpm.textContent = wpm;
+
+                if (IS_WARMUP && warmupBar) {
+                    const pct = Math.min(100, (wave - 1) / WARMUP_WAVES_REQ * 100);
+                    warmupBar.style.width = pct + '%';
+                }
+            }
+
+            function updateLivesDisplay() {
+                for (let i = 1; i <= 3; i++)
+                    document.getElementById('life-' + i).classList.toggle('lost', i > lives);
+            }
+
+            // ── Spawn ─────────────────────────────────────────────────────────────
+            function spawnWord() {
+                const cfg = getWaveConfig();
+                if (activeWords.length >= cfg.maxOnScreen) return;
+
+                const word = randomWord();
+                const el   = document.createElement('div');
+                el.className   = 'falling-word';
+                el.textContent = word;
+                el.style.visibility = 'hidden';
+                el.style.top  = '-200px';
+                el.style.left = '0px';
+                arena.appendChild(el);
+
+                const x = safeX(el);
+                el.style.left = x + 'px';
+                el.style.top  = (-WORD_HEIGHT_EST) + 'px';
+                el.style.visibility = 'visible';
+                activeWords.push({ el, word, y: -WORD_HEIGHT_EST, speed: cfg.speed });
+            }
+
+            function startSpawning() {
+                if (spawnTimer) clearInterval(spawnTimer);
+                spawnWord();
+                spawnTimer = setInterval(() => { if (gameRunning) spawnWord(); }, getWaveConfig().spawnMs);
+            }
+
+            // ── Particles ─────────────────────────────────────────────────────────
+            function spawnParticles(cx, cy) {
+                const colors = ['#00ffaa','#facc15','#7dd3fc'];
+                for (let i = 0; i < 8; i++) {
+                    const p     = document.createElement('div');
+                    p.className = 'particle';
+                    const angle = (i / 8) * Math.PI * 2;
+                    const dist  = 28 + Math.random() * 28;
+                    p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+                    p.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+                    p.style.background = colors[i % colors.length];
+                    p.style.left = cx + 'px';
+                    p.style.top  = cy + 'px';
+                    arena.appendChild(p);
+                    setTimeout(() => p.remove(), 600);
+                }
+            }
+
+            // ── Wave ──────────────────────────────────────────────────────────────
+            function announceWave(w) {
+                waveBanner.textContent = IS_WARMUP
+                    ? 'WAVE ' + w + ' / ' + WARMUP_WAVES_REQ
+                    : 'WAVE ' + w;
+                waveBanner.classList.remove('show');
+                void waveBanner.offsetWidth;
+                waveBanner.classList.add('show');
+                setTimeout(() => waveBanner.classList.remove('show'), 1800);
+
+                if (typeof WordDropAudio !== 'undefined') {
+                         WordDropAudio.playWave(w);
+                         WordDropAudio.updateWave(w);
+                }
+            }
+
+            function checkWaveAdvance() {
+                const newWave = Math.floor(wordsDestroyed / WORDS_PER_WAVE) + 1;
+                if (newWave <= wave) return;
+                wave = newWave;
+                announceWave(wave);
+
+                if (IS_WARMUP && (wave - 1) >= WARMUP_WAVES_REQ) {
+                    warmupComplete();
+                    return;
+                }
+
+                startSpawning();
+            }
+
+            // ── Warmup complete ───────────────────────────────────────────────────
+            function warmupComplete() {
+                gameRunning = false;
+                clearInterval(spawnTimer);
+                cancelAnimationFrame(rafId);
+
+                if (typeof WordDropAudio !== 'undefined') WordDropAudio.stop(); 
+
+                document.getElementById('wc-words').textContent = wordsDestroyed;
+                document.getElementById('wc-wpm').textContent   = bestWpm;
+                document.getElementById('f-warmupcompleted').value = 'true';
+                document.getElementById('f-score').value   = score;
+                document.getElementById('f-wave').value    = wave;
+                document.getElementById('f-words').value   = wordsDestroyed;
+                document.getElementById('f-bestwpm').value = bestWpm;
+
+                warmupDone.classList.add('show');
+            }
+
+            // ── Destroy ───────────────────────────────────────────────────────────
+            function destroyWord(entry) {
+                const rect = entry.el.getBoundingClientRect();
+                const ar   = arena.getBoundingClientRect();
+                spawnParticles(
+                    rect.left - ar.left + rect.width / 2,
+                    rect.top  - ar.top  + rect.height / 2
+                );
+
+                entry.el.classList.add('destroyed');
+                setTimeout(() => entry.el.remove(), 300);
+
+                activeWords = activeWords.filter(w => w !== entry);
+                wordsDestroyed++;
+                keystrokes += entry.word.length + 1;
+                score      += 10 * wave;
+
+                if (typeof WordDropAudio !== 'undefined') WordDropAudio.playDestroy();
+
+
+                updateHud();
+                checkWaveAdvance();
+            }
+
+            // ── Miss ──────────────────────────────────────────────────────────────
+            function missWord(entry) {
+                activeWords = activeWords.filter(w => w !== entry);
+                entry.el.classList.add('missed');
+                setTimeout(() => entry.el.remove(), 350);
+
+                lives--;
+                updateLivesDisplay();
+                triggerLifeFlash();
+
+                if (typeof WordDropAudio !== 'undefined') WordDropAudio.playMiss();
+
+                updateHud();
+                if (lives <= 0) endGame();
+            }
+
+            function triggerLifeFlash() {
+                lifeFlash.classList.remove('flash');
+                void lifeFlash.offsetWidth;
+                lifeFlash.classList.add('flash');
+            }
+
+            // ── Highlight ─────────────────────────────────────────────────────────
+            function highlightTargets(typed) {
+                activeWords.forEach(entry => {
+                    entry.el.textContent = entry.word;
+                    entry.el.classList.remove('targeted','partial');
+                    if (!typed) return;
+                    if (entry.word === typed) {
+                        entry.el.classList.add('targeted');
+                    } else if (entry.word.startsWith(typed)) {
+                        entry.el.classList.add('partial');
+                        const done = document.createElement('span');
+                        done.style.color = '#00ffaa';
+                        done.textContent = typed;
+                        const rest = document.createTextNode(entry.word.slice(typed.length));
+                        entry.el.innerHTML = '';
+                        entry.el.appendChild(done);
+                        entry.el.appendChild(rest);
+                    }
+                });
+            }
+
+            // ── Wrong word ────────────────────────────────────────────────────────
+            function handleWrongWord() {
+                if (wrongClearTimer) clearTimeout(wrongClearTimer);
+                input.classList.add('wrong');
+                lives--;
+                updateLivesDisplay();
+                triggerLifeFlash();
+
+                if (typeof WordDropAudio !== 'undefined') WordDropAudio.playWrong();
+
+                updateHud();
+                if (lives <= 0) { endGame(); return; }
+                wrongClearTimer = setTimeout(() => {
+                    input.value = '';
+                    input.classList.remove('wrong');
+                    highlightTargets('');
+                }, 350);
+            }
+
+            // ── Game loop ─────────────────────────────────────────────────────────
+            function gameLoop() {
+                if (!gameRunning) return;
+                const dangerY = arena.offsetHeight;
+
+                activeWords.forEach(e => { e.y += e.speed; e.el.style.top = e.y + 'px'; });
+                [...activeWords].forEach(e => { if (e.y + WORD_HEIGHT_EST >= dangerY) missWord(e); });
+
+                updateHud();
+                rafId = requestAnimationFrame(gameLoop);
+            }
+
+            // ── Input ─────────────────────────────────────────────────────────────
+            input.addEventListener('input', function () {
+                if (!gameRunning) return;
+                if (input.classList.contains('wrong')) return;
+                highlightTargets(input.value.trim().toLowerCase());
+            });
+
+            input.addEventListener('keyup', function (e) {
+                if (e.key !== ' ' && e.key !== 'Enter') return;
+                if (!gameRunning) return;
+                if (input.classList.contains('wrong')) return;
+
+                const typed = input.value.trim().toLowerCase();
+                if (!typed) return;
+
+                const match = activeWords.find(w =>
+                    w.word.trim().toLowerCase() === typed
+                );
+                if (match) {
+                    destroyWord(match);
+                    input.value = '';
+                    highlightTargets('');
+                } else {
+                    handleWrongWord();
+                }
+            });
+
+            // ── Start ─────────────────────────────────────────────────────────────
+                   function startGame() {
+            startScreen.style.display = 'none';
+            gameRunning   = true;
+            gameStartTime = Date.now();
+
+           
+            if (typeof WordDropAudio !== 'undefined') {
+                WordDropAudio.playStart();
+                WordDropAudio.start(1);
+            }
+
+            announceWave(1);
+            startSpawning();
+            rafId = requestAnimationFrame(gameLoop);
+            input.focus();
+        }
+
+            // ── End ───────────────────────────────────────────────────────────────
+            function endGame() {
+                if (!gameRunning) return;
+                gameRunning = false;
+                clearInterval(spawnTimer);
+                cancelAnimationFrame(rafId);
+
+                if (typeof WordDropAudio !== 'undefined') WordDropAudio.stop();
+
+                // Redirect to Results page — score saved server-side there
+                window.location.href = '/WordDrop/Results?score=' + score
+                    + '&wave='  + wave
+                    + '&words=' + wordsDestroyed
+                    + '&wpm='   + bestWpm;
+            }
+
+            // ── Init ──────────────────────────────────────────────────────────────
+            startBtn.addEventListener('click', startGame);
+
+        })();
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,418 @@
+﻿@model TypingTest.ViewModels.WordRacerResultViewModel
+@{
+    ViewData["Title"] = "Results — Word Racer";
+    Layout = "_Layout";
+}
+
+<style>
+    .results-wrap {
+        min-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(ellipse at 50% 0%,#0d1a2e 0%, #0a0a0f 70%);
+        padding: 40px 20px;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .results-wrap::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient( 0deg, transparent, transparent 2px, rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 4px );
+            pointer-events: none;
+            z-index: 0;
+        }
+
+    /* ── Hero ── */
+    .hero {
+        text-align: center;
+        margin-bottom: 14px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .hero-icon {
+        font-size: 76px;
+        display: block;
+        margin-bottom: 8px;
+        animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+
+    .hero-rating {
+        font-family: 'Orbitron', sans-serif;
+        font-size: clamp(28px, 7vw, 52px);
+        font-weight: 900;
+        letter-spacing: 5px;
+        text-shadow: 0 0 30px currentColor;
+        animation: popIn 0.5s 0.1s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+
+    .hero-wave {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 11px;
+        letter-spacing: 4px;
+        color: rgba(255,255,255,0.3);
+        text-transform: uppercase;
+        margin-top: 6px;
+    }
+
+    @@keyframes popIn {
+        from {
+            transform: scale(0.3);
+            opacity: 0;
+        }
+
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    /* ── New High Score ── */
+    .new-highscore {
+        display: inline-block;
+        padding: 5px 18px;
+        background: rgba(0,255,170,0.1);
+        border: 1px solid rgba(0,255,170,0.4);
+        border-radius: 20px;
+        color: #00ffaa;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 10px;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        margin: 8px 0 16px;
+        animation: glowOrange 1.5s ease-in-out infinite alternate;
+        position: relative;
+        z-index: 1;
+    }
+
+    @@keyframes glowOrange {
+        from {
+            box-shadow: 0 0 6px rgba(0,255,170,0.3);
+        }
+
+        to {
+            box-shadow: 0 0 20px rgba(0,255,170,0.7);
+        }
+    }
+
+    /* ── Stats Card ── */
+    .stats-card {
+        width: 100%;
+        max-width: 560px;
+        background: rgba(0,0,0,0.5);
+        border: 1px solid rgba(0,255,170,0.2);
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 18px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .stats-title {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 10px;
+        letter-spacing: 4px;
+        color: rgba(0,255,170,0.5);
+        text-transform: uppercase;
+        text-align: center;
+        margin-bottom: 18px;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+    }
+
+    .stat-cell {
+        text-align: center;
+    }
+
+    .stat-val {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 28px;
+        font-weight: 700;
+        color: #00ffaa;
+        text-shadow: 0 0 12px rgba(0,255,170,0.5);
+    }
+
+    .stat-lbl {
+        font-size: 9px;
+        letter-spacing: 3px;
+        color: rgba(255,255,255,0.3);
+        text-transform: uppercase;
+        margin-top: 4px;
+    }
+
+    /* ── Score Comparison ── */
+    .score-compare {
+        width: 100%;
+        max-width: 560px;
+        display: flex;
+        gap: 14px;
+        margin-bottom: 18px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .compare-block {
+        flex: 1;
+        padding: 16px;
+        border-radius: 6px;
+        background: rgba(0,0,0,0.4);
+        text-align: center;
+    }
+
+        .compare-block.current {
+            border: 1px solid rgba(0,255,170,0.35);
+        }
+
+        .compare-block.previous {
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+    .compare-val {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 24px;
+        font-weight: 700;
+    }
+
+    .compare-block.current .compare-val {
+        color: #00ffaa;
+    }
+
+    .compare-block.previous .compare-val {
+        color: rgba(255,255,255,0.3);
+    }
+
+    .compare-lbl {
+        font-size: 9px;
+        letter-spacing: 3px;
+        color: rgba(255,255,255,0.3);
+        text-transform: uppercase;
+        margin-top: 4px;
+    }
+
+    /* ── Summary ── */
+    .summary-card {
+        width: 100%;
+        max-width: 560px;
+        background: rgba(0,0,0,0.4);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 6px;
+        padding: 18px 24px;
+        margin-bottom: 24px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        font-size: 13px;
+    }
+
+        .summary-row:last-child {
+            border-bottom: none;
+        }
+
+    .summary-key {
+        color: rgba(255,255,255,0.35);
+        letter-spacing: 1px;
+    }
+
+    .summary-val {
+        color: #e0e0e0;
+        font-weight: bold;
+        letter-spacing: 1px;
+    }
+
+    /* ── Actions ── */
+    .action-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+        position: relative;
+        z-index: 1;
+    }
+
+    .btn-primary {
+        padding: 14px 38px;
+        background: rgba(0,255,170,0.08);
+        border: 2px solid #00ffaa;
+        border-radius: 4px;
+        color: #00ffaa;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 3px;
+        cursor: pointer;
+        text-decoration: none;
+        text-transform: uppercase;
+        transition: all 0.2s;
+    }
+
+        .btn-primary:hover {
+            background: rgba(0,255,170,0.15);
+            box-shadow: 0 0 24px rgba(0,255,170,0.3);
+            color: #00ffaa;
+            text-decoration: none;
+        }
+
+    .btn-secondary {
+        padding: 14px 38px;
+        background: transparent;
+        border: 2px solid rgba(255,255,255,0.12);
+        border-radius: 4px;
+        color: rgba(255,255,255,0.4);
+        font-family: 'Orbitron', sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 3px;
+        cursor: pointer;
+        text-decoration: none;
+        text-transform: uppercase;
+        transition: all 0.2s;
+    }
+
+        .btn-secondary:hover {
+            border-color: rgba(255,255,255,0.3);
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+        }
+
+    .divider {
+        width: 100px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(0,255,170,0.3), transparent);
+        margin: 8px auto;
+        position: relative;
+        z-index: 1;
+    }
+</style>
+
+<div class="results-wrap">
+
+    <!-- Hero -->
+    <div class="hero">
+        <span class="hero-icon">
+            @(Model.Wave <= 2 ? "🐢" :
+                        Model.Wave <= 4 ? "🚗" :
+                        Model.Wave <= 6 ? "🏎️" :
+                        Model.Wave <= 8 ? "⚡" : "🔥")
+        </span>
+        <div class="hero-rating" style="color: @Model.RatingColor;">
+            @Model.WaveRating
+        </div>
+        <div class="hero-wave">Reached Wave @Model.Wave</div>
+    </div>
+
+    <div class="divider"></div>
+
+    @if (Model.IsNewHighScore)
+    {
+        <div class="new-highscore">🔥 New High Score!</div>
+    }
+
+    <!-- Stats -->
+    <div class="stats-card">
+        <div class="stats-title">── Race Stats ──</div>
+        <div class="stats-grid">
+            <div class="stat-cell">
+                <div class="stat-val">@Model.Wave</div>
+                <div class="stat-lbl">Wave Reached</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-val">@Model.CarsDestroyed</div>
+                <div class="stat-lbl">Cars Destroyed</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-val">@Model.BestWpm</div>
+                <div class="stat-lbl">Best WPM</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-val">@Model.WordsDestroyed</div>
+                <div class="stat-lbl">Words Typed</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-val">@($"x{Model.BestStreak}")</div>
+                <div class="stat-lbl">Best Combo</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-val">@Model.PowerUpsUsed</div>
+                <div class="stat-lbl">Power-Ups Used</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Score Compare -->
+    <div class="score-compare">
+        <div class="compare-block current">
+            <div class="compare-val">@Model.Score</div>
+            <div class="compare-lbl">This Game</div>
+        </div>
+        <div class="compare-block previous">
+            <div class="compare-val">
+                @(Model.PreviousBest > 0 ? Model.PreviousBest : "—")
+            </div>
+            <div class="compare-lbl">Previous Best</div>
+        </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="summary-card">
+        <div class="summary-row">
+            <span class="summary-key">Wave Reached</span>
+            <span class="summary-val">Wave @Model.Wave</span>
+        </div>
+        <div class="summary-row">
+            <span class="summary-key">Cars Destroyed</span>
+            <span class="summary-val">@Model.CarsDestroyed 💥</span>
+        </div>
+        <div class="summary-row">
+            <span class="summary-key">Words Typed</span>
+            <span class="summary-val">@Model.WordsDestroyed</span>
+        </div>
+        <div class="summary-row">
+            <span class="summary-key">Best WPM</span>
+            <span class="summary-val">@Model.BestWpm WPM</span>
+        </div>
+        <div class="summary-row">
+            <span class="summary-key">Best Combo</span>
+            <span class="summary-val">@($"x{Model.BestStreak}") 🔥</span>
+        </div>
+        <div class="summary-row">
+            <span class="summary-key">Power-Ups Used</span>
+            <span class="summary-val">@Model.PowerUpsUsed ⚡</span>
+        </div>
+        <div class="summary-row">
+            <span class="summary-key">Final Score</span>
+            <span class="summary-val"
+                  style="color:#00ffaa; font-size:15px;">
+                @Model.Score
+            </span>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="action-row">
+        <a href="/WordRacer/Play" class="btn-primary">
+            🏎️ &nbsp;Play Again
+        </a>
+        <a href="/WordRacer" class="btn-secondary">
+            ← &nbsp;Menu
+        </a>
+        <a href="/Leaderboard?tab=wordracer" class="btn-secondary">
+            🏆 &nbsp;Leaderboard
+        </a>
+    </div>
+
+</div>

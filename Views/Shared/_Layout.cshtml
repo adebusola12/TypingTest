@@ -1,0 +1,571 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using TypingTest.Models
+@inject UserManager<ApplicationUser> UserManager
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — Typex</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+
+        /* ── Hamburger ── */
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            padding: 4px;
+            background: none;
+            border: none;
+        }
+
+            .hamburger span {
+                display: block;
+                width: 22px;
+                height: 2px;
+                background: var(--text);
+                border-radius: 2px;
+                transition: all 0.3s ease;
+            }
+
+            .hamburger.open span:nth-child(1) {
+                transform: translateY(7px) rotate(45deg);
+            }
+
+            .hamburger.open span:nth-child(2) {
+                opacity: 0;
+            }
+
+            .hamburger.open span:nth-child(3) {
+                transform: translateY(-7px) rotate(-45deg);
+            }
+
+        /* ── Mobile Menu ── */
+        .mobile-menu {
+            display: none;
+            flex-direction: column;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem;
+            gap: 0.5rem;
+        }
+
+            .mobile-menu.open {
+                display: flex;
+            }
+
+            .mobile-menu .nav-link {
+                padding: 0.75rem 1rem;
+                border-radius: var(--radius-md);
+                border: 1px solid var(--border);
+                width: 100%;
+                text-align: left;
+            }
+
+            .mobile-menu .nav-link-cta {
+                border-color: var(--accent);
+                color: var(--accent);
+            }
+
+            .mobile-menu .nav-form {
+                width: 100%;
+            }
+
+            .mobile-menu .nav-link-btn {
+                width: 100%;
+                text-align: left;
+                padding: 0.75rem 1rem;
+                border-radius: var(--radius-md);
+                border: 1px solid var(--border);
+            }
+
+        /* ── Mobile games section ── */
+        .mobile-games-label {
+            font-size: 9px;
+            letter-spacing: 3px;
+            color: var(--accent);
+            text-transform: uppercase;
+            padding: 0.5rem 1rem 0.25rem;
+            opacity: 0.6;
+        }
+
+        .mobile-games-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding-left: 0.75rem;
+            border-left: 2px solid rgba(0,255,170,0.2);
+            margin-left: 0.5rem;
+        }
+        /* ── Games Dropdown ── */
+        .nav-dropdown {
+            position: relative;
+        }
+
+        .nav-dropdown-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: none;
+            border: none;
+            font-family: inherit;
+            color: inherit;
+            cursor: pointer;
+        }
+
+        .dropdown-arrow {
+            font-size: 10px;
+            transition: transform 0.2s ease;
+            color: var(--accent);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 10px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--surface);
+            border: 1px solid rgba(0,255,170,0.2);
+            border-radius: 8px;
+            padding: 8px;
+            min-width: 220px;
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+            z-index: 200;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 6px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.15s ease;
+        }
+
+            .dropdown-item:hover {
+                background: rgba(0,255,170,0.08);
+                color: #00ffaa;
+                text-decoration: none;
+            }
+
+        .dropdown-item-icon {
+            font-size: 18px;
+        }
+
+        .dropdown-item-name {
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .dropdown-item-desc {
+            font-size: 11px;
+            color: rgba(255,255,255,0.35);
+            margin-top: 2px;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: rgba(255,255,255,0.08);
+            margin: 6px 0;
+        }
+
+        @@media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hamburger {
+                display: flex;
+            }
+        }
+
+        /* ── Mobile Block ── */
+        #mobile-block {
+            position: fixed;
+            inset: 0;
+            background: #0a0a0f;
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 32px;
+            gap: 20px;
+        }
+
+        .mb-icon {
+            font-size: 72px;
+            animation: mbFloat 3s ease-in-out infinite;
+        }
+
+        @@keyframes mbFloat {
+            0%, 100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-12px);
+            }
+        }
+
+        .mb-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(18px, 5vw, 26px);
+            font-weight: 900;
+            color: #00ffaa;
+            letter-spacing: 4px;
+            text-shadow: 0 0 20px rgba(0,255,170,0.6);
+        }
+
+        .mb-divider {
+            width: 80px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(0,255,170,0.4), transparent);
+        }
+
+        .mb-msg {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: rgba(255,255,255,0.4);
+            letter-spacing: 0.5px;
+            line-height: 1.9;
+            max-width: 300px;
+        }
+
+            .mb-msg .hl {
+                color: #00ffaa;
+                font-weight: bold;
+            }
+
+        .mb-devices {
+            display: flex;
+            gap: 32px;
+            justify-content: center;
+            margin: 4px 0;
+        }
+
+        .mb-device {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mb-device-icon {
+            font-size: 36px;
+        }
+
+        .mb-device-lbl {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 9px;
+            letter-spacing: 3px;
+            color: rgba(0,255,170,0.5);
+            text-transform: uppercase;
+        }
+
+        .mb-brand {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 9px;
+            letter-spacing: 5px;
+            color: rgba(0,255,170,0.2);
+            text-transform: uppercase;
+            margin-top: 8px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(0,255,170,0.08);
+            width: 100%;
+            max-width: 300px;
+        }
+    </style>
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+
+    <!-- ── Mobile / Tablet Block ── -->
+    <div id="mobile-block">
+        <div class="mb-icon">⌨️</div>
+        <div class="mb-title">DESKTOP &amp; LAPTOP ONLY</div>
+        <div class="mb-divider"></div>
+        <div class="mb-msg">
+            <span class="hl">TypeX</span> is a keyboard-first experience.
+            A physical keyboard is required to play
+            the games and take the typing test.
+        </div>
+        <div class="mb-devices">
+            <div class="mb-device">
+                <div class="mb-device-icon">💻</div>
+                <div class="mb-device-lbl">Laptop</div>
+            </div>
+            <div class="mb-device">
+                <div class="mb-device-icon">🖥️</div>
+                <div class="mb-device-lbl">Desktop</div>
+            </div>
+        </div>
+        <div class="mb-msg">
+            Please visit us on a
+            <span class="hl">laptop or desktop</span>
+            for the full TypeX experience!
+        </div>
+        <div class="mb-brand">TYPEX &nbsp;//&nbsp; TRAIN YOUR FINGERS</div>
+    </div>
+
+    <script>
+        (function () {
+            if (window.innerWidth < 1024) {
+                document.getElementById('mobile-block').style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
+        })();
+    </script>
+
+    <div class="bg-grid"></div>
+    <div class="bg-glow"></div>
+
+    <!-- ── Navbar ── -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a class="nav-brand" asp-controller="Home" asp-action="Index">
+                <span class="brand-icon">⌨</span>
+                <span class="brand-text">TYPE<span class="brand-accent">X</span></span>
+            </a>
+
+            <!-- Desktop links -->
+            <div class="nav-links">
+                <a class="nav-link" asp-controller="Home" asp-action="Index">
+                    <span class="nav-link-icon">⌂</span> Home
+                </a>
+                <a class="nav-link" asp-controller="Test" asp-action="Index">
+                    <span class="nav-link-icon">▶</span> Play
+                </a>
+
+                <!-- ── Games Dropdown ── -->
+                <div class="nav-dropdown" id="games-dropdown">
+                    <button class="nav-link nav-dropdown-btn" onclick="toggleGamesDropdown(event)">
+                        <span class="nav-link-icon">🎮</span>
+                        Games
+                        <span class="dropdown-arrow" id="games-arrow">▾</span>
+                    </button>
+
+                    <div class="dropdown-menu" id="games-menu">
+                        <a class="dropdown-item" asp-controller="WordDrop" asp-action="Index">
+                            <span class="dropdown-item-icon">⚔</span>
+                            <div>
+                                <div class="dropdown-item-name">Word Drop</div>
+                                <div class="dropdown-item-desc">Destroy falling words</div>
+                            </div>
+                        </a>
+                        <a class="dropdown-item" asp-controller="WordSniper" asp-action="Index">
+                            <span class="dropdown-item-icon">◎</span>
+                            <div>
+                                <div class="dropdown-item-name">Word Sniper</div>
+                                <div class="dropdown-item-desc">Precision targeting</div>
+                            </div>
+                        </a>
+                        <a class="dropdown-item" asp-controller="ChainMode" asp-action="Index">
+                            <span class="dropdown-item-icon">⛓</span>
+                            <div>
+                                <div class="dropdown-item-name">Chain Mode</div>
+                                <div class="dropdown-item-desc">Build word chains</div>
+                            </div>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" asp-controller="WordRacer" asp-action="Index">
+                            <span class="dropdown-item-icon">🏎</span>
+                            <div>
+                                <div class="dropdown-item-name">Word Racer</div>
+                                <div class="dropdown-item-desc">Stop the cars!</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                <!-- ── End Games Dropdown ── -->
+
+                <a class="nav-link" asp-controller="Leaderboard" asp-action="Index">
+                    <span class="nav-link-icon">◈</span> Ranks
+                </a>
+
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <a class="nav-link" asp-controller="Test" asp-action="History">
+                        <span class="nav-link-icon">◷</span> History
+                    </a>
+
+                    var currentUser = await UserManager.GetUserAsync(User);
+                    var displayName = currentUser?.DisplayName
+                    ?? User.Identity?.Name
+                    ?? "Profile";
+
+                    <a class="nav-link" asp-controller="Account" asp-action="Profile">
+                        <span class="nav-link-icon">◉</span> @displayName
+                    </a>
+
+                    <form asp-area="Identity" asp-page="/Account/Logout"
+                          method="post" class="nav-form">
+                        <button type="submit" class="nav-link nav-link-btn">
+                            <span class="nav-link-icon">⏻</span> Logout
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <a class="nav-link" asp-area="Identity" asp-page="/Account/Login">
+                        <span class="nav-link-icon">→</span> Login
+                    </a>
+                    <a class="nav-link nav-link-cta"
+                       asp-area="Identity" asp-page="/Account/Register">
+                        Register
+                    </a>
+                }
+            </div>
+
+            <!-- Hamburger -->
+            <button class="hamburger" id="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ── Mobile Menu ── -->
+    <div class="mobile-menu" id="mobile-menu">
+        <a class="nav-link" asp-controller="Home" asp-action="Index">
+            <span class="nav-link-icon">⌂</span> Home
+        </a>
+        <a class="nav-link" asp-controller="Test" asp-action="Index">
+            <span class="nav-link-icon">▶</span> Play
+        </a>
+
+        <!-- Games group in mobile -->
+        <div class="mobile-games-label">🎮 Games</div>
+        <div class="mobile-games-group">
+            <a class="nav-link" asp-controller="WordDrop" asp-action="Index">
+                <span class="nav-link-icon">⚔</span> Word Drop
+            </a>
+            <a class="nav-link" asp-controller="WordSniper" asp-action="Index">
+                <span class="nav-link-icon">◎</span> Word Sniper
+            </a>
+            <a class="nav-link" asp-controller="ChainMode" asp-action="Index">
+                <span class="nav-link-icon">⛓</span> Chain Mode
+            </a>
+            <a class="nav-link" asp-controller="WordRacer" asp-action="Index">
+                <span class="nav-link-icon">🏎</span> Word Racer
+            </a>
+        </div>
+
+        <a class="nav-link" asp-controller="Leaderboard" asp-action="Index">
+            <span class="nav-link-icon">◈</span> Ranks
+        </a>
+
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <a class="nav-link" asp-controller="Test" asp-action="History">
+                <span class="nav-link-icon">◷</span> History
+            </a>
+
+            var currentUserMobile = await UserManager.GetUserAsync(User);
+            var displayNameMobile = currentUserMobile?.DisplayName
+            ?? User.Identity?.Name
+            ?? "Profile";
+
+            <a class="nav-link" asp-controller="Account" asp-action="Profile">
+                <span class="nav-link-icon">◉</span> @displayNameMobile
+            </a>
+
+            <form asp-area="Identity" asp-page="/Account/Logout"
+                  method="post" class="nav-form">
+                <button type="submit" class="nav-link nav-link-btn">
+                    <span class="nav-link-icon">⏻</span> Logout
+                </button>
+            </form>
+        }
+        else
+        {
+            <a class="nav-link" asp-area="Identity" asp-page="/Account/Login">
+                <span class="nav-link-icon">→</span> Login
+            </a>
+            <a class="nav-link nav-link-cta"
+               asp-area="Identity" asp-page="/Account/Register">
+                Register
+            </a>
+        }
+    </div>
+
+    <!-- ── Flash Messages ── -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="flash flash-success">
+            <span>✓</span> @TempData["Success"]
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="flash flash-error">
+            <span>✗</span> @TempData["Error"]
+        </div>
+    }
+
+    <!-- ── Page Content ── -->
+    <main class="main-content">
+        @RenderBody()
+    </main>
+
+    <!-- ── Footer ── -->
+    <footer class="footer">
+        <div class="footer-inner">
+            <span class="footer-brand">TYPEX</span>
+            <span class="footer-sep">//</span>
+            <span class="footer-copy">Train your fingers. Conquer the keyboard.</span>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        function toggleMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const btn  = document.getElementById('hamburger');
+            menu.classList.toggle('open');
+            btn.classList.toggle('open');
+        }
+    </script>
+    <script>
+        function toggleMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const btn  = document.getElementById('hamburger');
+            menu.classList.toggle('open');
+            btn.classList.toggle('open');
+        }
+
+        function toggleGamesDropdown(e) {
+            e.preventDefault();
+            const menu  = document.getElementById('games-menu');
+            const arrow = document.getElementById('games-arrow');
+            menu.style.display      = (menu.style.display === 'flex') ? 'none' : 'flex';
+            arrow.style.transform   = (menu.style.display === 'flex') ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function (event) {
+            const dropdown = document.getElementById('games-dropdown');
+            const menu     = document.getElementById('games-menu');
+            const arrow    = document.getElementById('games-arrow');
+            if (!dropdown.contains(event.target)) {
+                menu.style.display    = 'none';
+                arrow.style.transform = 'rotate(0deg)';
+            }
+        });
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

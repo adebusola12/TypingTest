@@ -1,0 +1,323 @@
+﻿@page
+@model RegisterModel
+@{
+    ViewData["Title"] = "Register"; Layout = "/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .auth-wrap {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 70vh;
+        padding: 2rem 1rem;
+    }
+
+    .auth-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(0,255,200,0.15);
+        border-radius: 8px;
+        padding: 36px 40px;
+        width: 100%;
+        max-width: 440px;
+        position: relative;
+    }
+
+        .auth-card::before, .auth-card::after {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-color: rgba(0,255,200,0.3);
+            border-style: solid;
+            pointer-events: none;
+        }
+
+        .auth-card::before {
+            top: -1px;
+            left: -1px;
+            border-width: 1px 0 0 1px;
+        }
+
+        .auth-card::after {
+            bottom: -1px;
+            right: -1px;
+            border-width: 0 1px 1px 0;
+        }
+
+    .auth-title {
+        font-family: 'Orbitron',monospace;
+        font-size: 22px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: 2px;
+        margin-bottom: 4px;
+    }
+
+        .auth-title span {
+            color: #00ffc8;
+        }
+
+    .auth-sub {
+        font-family: 'JetBrains Mono',monospace;
+        font-size: 12px;
+        color: #555;
+        letter-spacing: 1px;
+        margin-bottom: 28px;
+    }
+
+    /* ── Error banner ── */
+    .auth-error-banner {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        background: rgba(255,60,60,0.07);
+        border: 1px solid rgba(255,60,60,0.35);
+        border-radius: 5px;
+        padding: 12px 14px;
+        margin-bottom: 20px;
+    }
+
+    .auth-error-banner-icon {
+        font-size: 15px;
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+
+    .auth-error-banner-body {
+        flex: 1;
+    }
+
+    .auth-error-banner-title {
+        font-family: 'Orbitron', monospace;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        color: #ff4d4d;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+    }
+
+    .auth-error-banner ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+        .auth-error-banner ul li {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: rgba(255,100,100,0.9);
+            padding: 2px 0 2px 14px;
+            position: relative;
+        }
+
+            .auth-error-banner ul li::before {
+                content: '→';
+                position: absolute;
+                left: 0;
+                color: #ff4d4d;
+            }
+
+    .auth-field {
+        margin-bottom: 18px;
+    }
+
+        .auth-field label {
+            display: block;
+            font-family: 'JetBrains Mono',monospace;
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            color: #00ffc8;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+    .auth-field-wrap {
+        position: relative;
+    }
+
+    .auth-field input {
+        width: 100%;
+        padding: 11px 44px 11px 14px;
+        background: rgba(0,0,0,0.4);
+        border: 1px solid #222;
+        border-radius: 4px;
+        color: #e0e0e0;
+        font-family: 'JetBrains Mono',monospace;
+        font-size: 13px;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+
+        .auth-field input:focus {
+            border-color: rgba(0,255,200,0.4);
+        }
+
+        .auth-field input::placeholder {
+            color: #333;
+        }
+
+        /* Red border on invalid fields — set by Razor on page reload */
+        .auth-field input.input-error {
+            border-color: rgba(255,60,60,0.6) !important;
+            background: rgba(255,60,60,0.04);
+        }
+
+    .auth-toggle {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #444;
+        cursor: pointer;
+        font-family: 'JetBrains Mono',monospace;
+        font-size: 11px;
+        letter-spacing: 1px;
+    }
+
+        .auth-toggle:hover {
+            color: #00ffc8;
+        }
+
+    .field-error {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        color: #ff4d4d;
+        margin-top: 5px;
+        display: block;
+    }
+
+    .field-hint {
+        font-size: 10px;
+        color: #444;
+        font-family: 'JetBrains Mono', monospace;
+        margin-top: 5px;
+    }
+
+    .auth-btn {
+        width: 100%;
+        padding: 13px;
+        background: transparent;
+        border: 1px solid #00ffc8;
+        color: #00ffc8;
+        font-family: 'Orbitron',monospace;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: all 0.2s;
+        margin-top: 4px;
+    }
+
+        .auth-btn:hover {
+            background: rgba(0,255,200,0.08);
+        }
+
+    .auth-divider {
+        text-align: center;
+        font-family: 'JetBrains Mono',monospace;
+        font-size: 11px;
+        color: #333;
+        letter-spacing: 1px;
+        margin: 20px 0;
+    }
+
+    .auth-switch {
+        text-align: center;
+        font-family: 'JetBrains Mono',monospace;
+        font-size: 12px;
+        color: #444;
+    }
+
+        .auth-switch a {
+            color: #00ffc8;
+            text-decoration: none;
+        }
+</style>
+
+<div class="auth-wrap">
+    <div class="auth-card">
+        <div class="auth-title">TYPE<span>X</span></div>
+        <div class="auth-sub">// create your identity</div>
+
+        @* Error banner — only shown when server-side validation fails *@
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="auth-error-banner">
+                <div class="auth-error-banner-icon">⚠</div>
+                <div class="auth-error-banner-body">
+                    <div class="auth-error-banner-title">Registration Failed</div>
+                    <ul asp-validation-summary="ModelOnly"></ul>
+                </div>
+            </div>
+        }
+
+        <form method="post" id="register-form">
+
+            <div class="auth-field">
+                <label asp-for="Input.DisplayName">Display Name</label>
+                <input asp-for="Input.DisplayName"
+                       placeholder="KeyboardWarrior99"
+                       class="@(!ViewData.ModelState.IsValid && ViewData.ModelState["Input.DisplayName"]?.Errors.Count > 0 ? "input-error" : "")" />
+                <div class="field-hint">// shown on leaderboard · max 50 chars</div>
+                <span asp-validation-for="Input.DisplayName" class="field-error"></span>
+            </div>
+
+            <div class="auth-field">
+                <label asp-for="Input.Email">Email</label>
+                <input asp-for="Input.Email"
+                       placeholder="user@example.com"
+                       autocomplete="username"
+                       class="@(!ViewData.ModelState.IsValid && ViewData.ModelState["Input.Email"]?.Errors.Count > 0 ? "input-error" : "")" />
+                <span asp-validation-for="Input.Email" class="field-error"></span>
+            </div>
+
+            <div class="auth-field">
+                <label asp-for="Input.Password">Password</label>
+                <div class="auth-field-wrap">
+                    <input asp-for="Input.Password"
+                           id="rpass"
+                           placeholder="••••••••"
+                           autocomplete="new-password"
+                           class="@(!ViewData.ModelState.IsValid && ViewData.ModelState["Input.Password"]?.Errors.Count > 0 ? "input-error" : "")" />
+                    <button type="button" class="auth-toggle" onclick="togglePass('rpass',this)">SHOW</button>
+                </div>
+                <div class="field-hint">// min 8 chars · must include uppercase &amp; number</div>
+                <span asp-validation-for="Input.Password" class="field-error"></span>
+            </div>
+
+            <div class="auth-field">
+                <label asp-for="Input.ConfirmPassword">Confirm Password</label>
+                <div class="auth-field-wrap">
+                    <input asp-for="Input.ConfirmPassword"
+                           id="rpass2"
+                           placeholder="••••••••"
+                           autocomplete="new-password"
+                           class="@(!ViewData.ModelState.IsValid && ViewData.ModelState["Input.ConfirmPassword"]?.Errors.Count > 0 ? "input-error" : "")" />
+                    <button type="button" class="auth-toggle" onclick="togglePass('rpass2',this)">SHOW</button>
+                </div>
+                <span asp-validation-for="Input.ConfirmPassword" class="field-error"></span>
+            </div>
+
+            <button type="submit" class="auth-btn">[ CREATE ACCOUNT ]</button>
+        </form>
+
+        <div class="auth-divider">── or ──</div>
+        <div class="auth-switch">Already a user? <a asp-page="./Login">Login here</a></div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function togglePass(id, btn) {
+            const inp = document.getElementById(id);s
+            inp.type = inp.type === 'password' ? 'text' : 'password';
+            btn.textContent = inp.type === 'password' ? 'SHOW' : 'HIDE';
+        }
+    </script>
+}

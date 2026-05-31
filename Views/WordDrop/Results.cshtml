@@ -1,0 +1,290 @@
+﻿@model TypingTest.ViewModels.WordDropResultViewModel
+@{
+    ViewData["Title"] = "Word Drop — Game Over";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Game Over — TypeX</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            font-family: 'Share Tech Mono', monospace;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+            /* Scanlines */
+            body::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                background: repeating-linear-gradient( 0deg, transparent, transparent 2px, rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px );
+                pointer-events: none;
+                z-index: 100;
+            }
+
+        .gameover-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            text-align: center;
+            padding: 2rem 1.5rem;
+            width: 100%;
+            max-width: 500px;
+            animation: fadeUp 0.5s ease;
+        }
+
+        @@keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ── Title ── */
+        .go-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(2rem, 7vw, 3rem);
+            font-weight: 900;
+            color: #ff3355;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            text-shadow: 0 0 30px rgba(255,51,85,0.5);
+        }
+
+        /* ── Stats grid ── */
+        .go-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1px;
+            background: rgba(0,255,170,0.08);
+            border-radius: 8px;
+            overflow: hidden;
+            width: 100%;
+            border: 1px solid rgba(0,255,170,0.12);
+        }
+
+        .go-stat {
+            background: #0d0d14;
+            padding: 1.2rem 1rem;
+        }
+
+        .go-stat-val {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #00ffaa;
+            text-shadow: 0 0 12px rgba(0,255,170,0.5);
+        }
+
+        .go-stat-lbl {
+            font-size: 0.6rem;
+            color: rgba(0,255,170,0.35);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: 4px;
+        }
+
+        /* ── High score banner ── */
+        .go-highscore {
+            width: 100%;
+            padding: 1.1rem 1.5rem;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+            .go-highscore.new-record {
+                background: rgba(250,204,21,0.06);
+                border: 1px solid rgba(250,204,21,0.3);
+                animation: recordPulse 1s ease-in-out infinite alternate;
+            }
+
+        @@keyframes recordPulse {
+            from {
+                box-shadow: 0 0 10px rgba(250,204,21,0.1);
+            }
+
+            to {
+                box-shadow: 0 0 25px rgba(250,204,21,0.3);
+            }
+        }
+
+        .go-highscore.previous-best {
+            background: rgba(0,255,170,0.03);
+            border: 1px solid rgba(0,255,170,0.1);
+        }
+
+        .go-hs-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .go-highscore.new-record .go-hs-title {
+            color: #facc15;
+        }
+
+        .go-highscore.previous-best .go-hs-title {
+            color: #00ffaa;
+        }
+
+        .go-hs-sub {
+            font-size: 0.72rem;
+            letter-spacing: 1px;
+        }
+
+        .go-highscore.new-record .go-hs-sub {
+            color: rgba(250,204,21,0.6);
+        }
+
+        .go-highscore.previous-best .go-hs-sub {
+            color: rgba(0,255,170,0.4);
+        }
+
+        /* ── Buttons ── */
+        .go-btns {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn-play-again {
+            padding: 0.9rem 2rem;
+            background: rgba(0,255,170,0.08);
+            border: 2px solid #00ffaa;
+            border-radius: 3px;
+            color: #00ffaa;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            cursor: pointer;
+            text-decoration: none;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+            .btn-play-again:hover {
+                background: rgba(0,255,170,0.15);
+                box-shadow: 0 0 25px rgba(0,255,170,0.3);
+            }
+
+        .btn-menu {
+            padding: 0.9rem 2rem;
+            background: transparent;
+            border: 1px solid rgba(0,255,170,0.2);
+            border-radius: 3px;
+            color: rgba(0,255,170,0.6);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            cursor: pointer;
+            text-decoration: none;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+            .btn-menu:hover {
+                border-color: rgba(0,255,170,0.5);
+                color: #00ffaa;
+            }
+    </style>
+</head>
+<body>
+    <div class="gameover-wrap">
+
+        <!-- Title -->
+        <div class="go-title">Game Over</div>
+
+        <!-- Stats -->
+        <div class="go-stats">
+            <div class="go-stat">
+                <div class="go-stat-val">@Model.Score.ToString("N0")</div>
+                <div class="go-stat-lbl">Score</div>
+            </div>
+            <div class="go-stat">
+                <div class="go-stat-val">@Model.Wave</div>
+                <div class="go-stat-lbl">Wave</div>
+            </div>
+            <div class="go-stat">
+                <div class="go-stat-val">@Model.WordsDestroyed</div>
+                <div class="go-stat-lbl">Words Destroyed</div>
+            </div>
+            <div class="go-stat">
+                <div class="go-stat-val">@Model.BestWpm</div>
+                <div class="go-stat-lbl">Best WPM</div>
+            </div>
+        </div>
+
+        <!-- High Score Banner -->
+        @if (Model.IsNewHighScore)
+        {
+            <div class="go-highscore new-record">
+                <div class="go-hs-title">🏆 New High Score!</div>
+                <div class="go-hs-sub">
+                    Previous best was @Model.PreviousBest.ToString("N0") pts
+                    — you beat it by @((Model.Score - Model.PreviousBest).ToString("N0"))!
+                </div>
+            </div>
+        }
+        else if (Model.PreviousBest > 0)
+        {
+            <div class="go-highscore previous-best">
+                <div class="go-hs-title">🏆 Best: @Model.PreviousBest.ToString("N0") pts</div>
+                <div class="go-hs-sub">
+                    You need @((Model.PreviousBest - Model.Score + 1).ToString("N0")) more to beat your record
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="go-highscore previous-best">
+                <div class="go-hs-title">🏆 First Score Saved!</div>
+                <div class="go-hs-sub">Play again to beat your new record</div>
+            </div>
+        }
+
+        <!-- Buttons -->
+        <div class="go-btns">
+            <a href="/WordDrop/Play" class="btn-play-again">▶ Play Again</a>
+            <a href="/WordDrop" class="btn-menu">◼ Menu</a>
+        </div>
+
+    </div>
+</body>
+</html>

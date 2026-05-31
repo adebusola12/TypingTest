@@ -1,0 +1,242 @@
+﻿@{
+    ViewData["Title"] = "New Test";
+}
+
+@section Styles {
+    <style>
+        .test-config {
+            max-width: 700px;
+            margin: 3rem auto;
+        }
+
+        .config-title {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 900;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+        }
+
+        .config-subtitle {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text3);
+            letter-spacing: 1px;
+            margin-bottom: 2rem;
+        }
+
+        .option-group {
+            margin-bottom: 2rem;
+        }
+
+        .option-label {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--text3);
+            margin-bottom: 0.75rem;
+        }
+
+        .option-pills {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .pill {
+            padding: 8px 20px;
+            border-radius: 100px;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            cursor: pointer;
+            border: 1px solid var(--border2);
+            background: var(--surface);
+            color: var(--text2);
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+            .pill:hover {
+                border-color: var(--accent);
+                color: var(--accent);
+            }
+
+            .pill.active {
+                background: var(--accent);
+                border-color: var(--accent);
+                color: var(--bg);
+                font-weight: 700;
+            }
+
+            .pill.active-purple {
+                background: var(--accent2);
+                border-color: var(--accent2);
+                color: #fff;
+            }
+
+            .pill.active-green {
+                background: var(--success);
+                border-color: var(--success);
+                color: var(--bg);
+            }
+
+            .pill.active-warning {
+                background: var(--warning);
+                border-color: var(--warning);
+                color: var(--bg);
+            }
+
+            .pill.active-danger {
+                background: var(--danger);
+                border-color: var(--danger);
+                color: #fff;
+            }
+
+        .config-preview {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 2rem;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text3);
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+            .config-preview span {
+                color: var(--accent);
+                font-weight: 600;
+            }
+
+        .start-btn {
+            width: 100%;
+            justify-content: center;
+            font-size: 1rem;
+            letter-spacing: 3px;
+            padding: 16px;
+            animation: pulse-glow 2s ease infinite;
+        }
+    </style>
+}
+
+<div class="test-config">
+    <div class="config-title">Configure Test</div>
+    <div class="config-subtitle">// choose your parameters and begin</div>
+
+    <!-- Mode selection -->
+    <div class="option-group">
+        <div class="option-label">Mode</div>
+        <div class="option-pills" id="mode-pills">
+            <div class="pill active" data-group="mode" data-value="0" data-color="active">
+                ⏱ Timed
+            </div>
+            <div class="pill" data-group="mode" data-value="1" data-color="active-purple">
+                📝 Word Count
+            </div>
+        </div>
+    </div>
+
+    <!-- Duration (timed mode) -->
+    <div class="option-group" id="duration-group">
+        <div class="option-label">Duration</div>
+        <div class="option-pills" id="duration-pills">
+            <div class="pill" data-group="duration" data-value="15" data-color="active">15s</div>
+            <div class="pill" data-group="duration" data-value="30" data-color="active">30s</div>
+            <div class="pill active" data-group="duration" data-value="60" data-color="active">60s</div>
+            <div class="pill" data-group="duration" data-value="120" data-color="active">120s</div>
+        </div>
+    </div>
+
+    <!-- Word count (word count mode) -->
+    <div class="option-group" id="wordcount-group" style="display:none">
+        <div class="option-label">Word Count</div>
+        <div class="option-pills" id="wordcount-pills">
+            <div class="pill" data-group="wordcount" data-value="10" data-color="active-purple">10</div>
+            <div class="pill active" data-group="wordcount" data-value="25" data-color="active-purple">25</div>
+            <div class="pill" data-group="wordcount" data-value="50" data-color="active-purple">50</div>
+            <div class="pill" data-group="wordcount" data-value="100" data-color="active-purple">100</div>
+        </div>
+    </div>
+
+    <!-- Difficulty -->
+    <div class="option-group">
+        <div class="option-label">Difficulty</div>
+        <div class="option-pills" id="difficulty-pills">
+            <div class="pill active" data-group="difficulty" data-value="0" data-color="active-green">Easy</div>
+            <div class="pill" data-group="difficulty" data-value="1" data-color="active-warning">Medium</div>
+            <div class="pill" data-group="difficulty" data-value="2" data-color="active-danger">Hard</div>
+        </div>
+    </div>
+
+    <!-- Live config preview -->
+    <div class="config-preview">
+        Mode: <span id="prev-mode">Timed</span>
+        &nbsp;·&nbsp; Duration: <span id="prev-duration">60s</span>
+        &nbsp;·&nbsp; Difficulty: <span id="prev-difficulty">Easy</span>
+    </div>
+
+    <!-- Start button -->
+    <a id="start-btn" href="/Test/Start?difficulty=0&mode=0&duration=60&wordCount=25"
+       class="btn btn-primary btn-lg start-btn">
+        ▶ START TEST
+    </a>
+</div>
+
+@section Scripts {
+    <script>
+        const state = { mode: 0, duration: 60, difficulty: 0, wordcount: 25 };
+
+        const modeNames = { 0: 'Timed', 1: 'Word Count' };
+        const diffNames = { 0: 'Easy', 1: 'Medium', 2: 'Hard' };
+
+        function updatePills(group, value, colorClass) {
+            document.querySelectorAll(`[data-group="${group}"]`).forEach(p => {
+                p.classList.remove('active','active-purple','active-green','active-warning','active-danger');
+            });
+            const el = document.querySelector(`[data-group="${group}"][data-value="${value}"]`);
+            if (el) el.classList.add(colorClass);
+        }
+
+        function updatePreview() {
+            document.getElementById('prev-mode').textContent = modeNames[state.mode];
+            document.getElementById('prev-duration').textContent =
+                state.mode === 0 ? state.duration + 's' : state.wordcount + ' words';
+            document.getElementById('prev-difficulty').textContent = diffNames[state.difficulty];
+
+            const url = `/Test/Start?difficulty=${state.difficulty}&mode=${state.mode}&duration=${state.duration}&wordCount=${state.wordcount}`;
+            document.getElementById('start-btn').href = url;
+        }
+
+        document.querySelectorAll('.pill').forEach(pill => {
+            pill.addEventListener('click', () => {
+                const group = pill.dataset.group;
+                const value = parseInt(pill.dataset.value);
+                const color = pill.dataset.color;
+
+                if (group === 'mode') {
+                    state.mode = value;
+                    document.getElementById('duration-group').style.display = value === 0 ? 'block' : 'none';
+                    document.getElementById('wordcount-group').style.display = value === 1 ? 'block' : 'none';
+                } else if (group === 'duration') {
+                    state.duration = value;
+                } else if (group === 'difficulty') {
+                    state.difficulty = value;
+                } else if (group === 'wordcount') {
+                    state.wordcount = value;
+                }
+
+                updatePills(group, value, color);
+                updatePreview();
+            });
+        });
+
+        updatePreview();
+    </script>
+}

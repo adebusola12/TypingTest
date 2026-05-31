@@ -1,0 +1,1131 @@
+﻿@{
+    ViewData["Title"] = "Chain Mode";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    /* ── Full screen rhythmic feel ───────────────────────────────────────── */
+    * {
+        box-sizing: border-box;
+    }
+
+    .chain-wrap {
+        position: fixed;
+        inset: 0;
+        top: 56px;
+        background: #0a0a1a;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-family: monospace;
+        overflow: hidden;
+    }
+    H
+        .chain-wrap::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(0, 229, 255, 0.06) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+    /* ── HUD ─────────────────────────────────────────────────────────────── */
+    .chain-hud {
+        position: fixed;
+        top: 64px;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 2rem;
+        background: rgba(10, 6, 15, 0.9);
+        border-bottom: 1px solid rgba(0, 229, 255, 0.15);
+        z-index: 10;
+    }
+
+    .hud-group {
+        display: flex;
+        gap: 2rem;
+        align-items: center;
+    }
+
+    .hud-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+    }
+
+    .hud-label {
+        font-size: 0.6rem;
+        color: #334455;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+    }
+
+    .hud-value {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #00e5ff;
+    }
+
+    /* ── Lives — gem style ───────────────────────────────────────────────── */
+    .chain-lives {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .chain-life {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #00e5ff;
+        box-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
+        transition: all 0.3s;
+    }
+
+        .chain-life.lost {
+            background: #1a0a2a;
+            box-shadow: none;
+        }
+
+    /* ── Chain trail ─────────────────────────────────────────────────────── */
+    .chain-trail {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+        max-width: 560px;
+        min-height: 24px;
+        margin-bottom: 1.5rem;
+        align-items: center;
+        z-index: 1;
+    }
+
+    .chain-word {
+        font-size: 0.7rem;
+        color: #1a2233;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        transition: color 0.3s;
+    }
+
+        .chain-word.recent {
+            color: #00e5ff;
+            text-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
+        }
+
+    .chain-arrow {
+        font-size: 0.6rem;
+        color: #1a2233;
+    }
+
+    /* ── Arena ───────────────────────────────────────────────────────────── */
+    .chain-arena {
+        position: relative;
+        width: 380px;
+        height: 220px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 229, 255, 0.04);
+        border: 1px solid rgba(0, 229, 255, 0.2);
+        border-radius: 16px;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+        z-index: 1;
+    }
+
+        /* Animated corner accents */
+        .chain-arena::before,
+        .chain-arena::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-color: rgba(0, 229, 255, 0.5);
+            border-style: solid;
+        }
+
+        .chain-arena::before {
+            top: 8px;
+            left: 8px;
+            border-width: 2px 0 0 2px;
+            border-radius: 4px 0 0 0;
+        }
+
+        .chain-arena::after {
+            bottom: 8px;
+            right: 8px;
+            border-width: 0 2px 2px 0;
+            border-radius: 0 0 4px 0;
+        }
+
+        /* Beat pulse glow */
+        .chain-arena.beat-pulse {
+            animation: chainPulse 0.15s ease-out;
+        }
+
+    @@keyframes chainPulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(180,79,255,0.4), inset 0 0 20px rgba(180,79,255,0.1);
+        }
+
+        50% {
+            box-shadow: 0 0 0 12px rgba(180,79,255,0), inset 0 0 30px rgba(180,79,255,0.08);
+        }
+
+        100% {
+            box-shadow: none;
+        }
+    }
+
+    .chain-prompt {
+        font-size: 0.6rem;
+        color: #334455;
+        text-transform: uppercase;
+        letter-spacing: 0.25em;
+        margin-bottom: 0.5rem;
+    }
+
+    .chain-target-word {
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        font-weight: 700;
+        color: #00e5ff;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        user-select: none;
+        text-shadow: 0 0 20px rgba(0, 229, 255, 0.5), 0 0 40px rgba(0, 229, 255, 0.2);
+    }
+
+    .chain-last-hint {
+        font-size: 0.65rem;
+        color: #334455;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        margin-top: 0.5rem;
+    }
+
+        .chain-last-hint span {
+            color: #00e5ff;
+        }
+
+    /* Beat bar */
+    .beat-bar-track {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: #0a0a1a;
+    }
+
+    .beat-bar-fill {
+        height: 100%;
+        background: #00e5ff;
+        width: 100%;
+        transition: none;
+        box-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
+    }
+
+    /* ── Timing zones ────────────────────────────────────────────────────── */
+    .timing-zones {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 1.2rem;
+        font-size: 0.6rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        z-index: 1;
+    }
+
+    .zone {
+        padding: 3px 10px;
+        border-radius: 3px;
+        font-weight: 700;
+    }
+
+    .zone-perfect {
+        background: rgba(0,255,136,0.08);
+        color: #00ff88;
+        border: 1px solid rgba(0,255,136,0.3);
+    }
+
+    .zone-good {
+        background: rgba(255,214,0,0.08);
+        color: #ffd600;
+        border: 1px solid rgba(255,214,0,0.3);
+    }
+
+    .zone-late {
+        background: rgba(255,100,0,0.08);
+        color: #ff6400;
+        border: 1px solid rgba(255,100,0,0.3);
+    }
+
+    /* ── Input ───────────────────────────────────────────────────────────── */
+    .chain-input {
+        background: rgba(0, 229, 255, 0.04);
+        border: 1px solid rgba(0, 229, 255, 0.2);
+        border-radius: 8px;
+        color: #00e5ff;
+        font-family: monospace;
+        font-size: 1.3rem;
+        text-align: center;
+        padding: 0.75rem 1.5rem;
+        width: 320px;
+        outline: none;
+        letter-spacing: 0.1em;
+        transition: border-color 0.15s, box-shadow 0.15s;
+        caret-color: #00e5ff;
+        z-index: 1;
+    }
+
+        .chain-input:focus {
+            border-color: rgba(0, 229, 255, 0.5);
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.1);
+        }
+
+        .chain-input.valid {
+            border-color: #00ff88;
+            color: #00ff88;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.1);
+        }
+
+        .chain-input.invalid {
+            border-color: rgba(0, 229, 255, 0.5);
+            color: #ff4466;
+        }
+
+    /* ── Feedback ────────────────────────────────────────────────────────── */
+    .chain-feedback {
+        margin-top: 0.75rem;
+        font-size: 1rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        min-height: 24px;
+        opacity: 0;
+        transition: opacity 0.15s;
+        z-index: 1;
+    }
+
+        .chain-feedback.show {
+            opacity: 1;
+        }
+
+        .chain-feedback.perfect {
+            color: #00ff88;
+            text-shadow: 0 0 10px rgba(0,255,136,0.4);
+        }
+
+        .chain-feedback.good {
+            color: #ffd600;
+        }
+
+        .chain-feedback.late {
+            color: #ff6400;
+        }
+
+        .chain-feedback.miss {
+            color: #ff4466;
+        }
+
+        .chain-feedback.wrong {
+            color: #ff4466;
+        }
+
+    /* ── Mute button ─────────────────────────────────────────────────────── */
+    #mute-btn {
+        background: none;
+        border: 1px solid rgba(0, 229, 255, 0.2);
+        border-radius: 4px;
+        color: #445566;
+        font-family: monospace;
+        font-size: 0.75rem;
+        padding: 0.25rem 0.6rem;
+        cursor: pointer;
+    }
+
+    /* ── Start Overlay ───────────────────────────────────────────────────── */
+    .start-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(10, 6, 15, 0.97);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        cursor: pointer;
+        text-align: center;
+        padding: 2rem;
+    }
+
+    .start-overlay-title {
+        font-family: monospace;
+        font-size: clamp(2rem, 8vw, 3.5rem);
+        font-weight: 700;
+        color: #00e5ff;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 0 40px rgba(0, 229, 255, 0.4);
+    }
+
+    .start-overlay-sub {
+        font-family: monospace;
+        font-size: 0.8rem;
+        color: #445566;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        margin-bottom: 2.5rem;
+    }
+
+    .start-overlay-rules {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 2rem;
+        text-align: left;
+        max-width: 400px;
+        width: 100%;
+        background: rgba(0, 229, 255, 0.04);
+        border: 1px solid rgba(0, 229, 255, 0.15);
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+    }
+
+    .start-overlay-rule {
+        font-family: monospace;
+        font-size: 0.82rem;
+        color: #667788;
+        line-height: 1.5;
+    }
+
+        .start-overlay-rule span {
+            color: #00e5ff;
+        }
+
+    .start-overlay-example {
+        font-family: monospace;
+        font-size: 0.78rem;
+        color: #334455;
+        margin-bottom: 2rem;
+        letter-spacing: 0.05em;
+    }
+
+        .start-overlay-example span {
+            color: #00e5ff;
+        }
+
+    .start-overlay-btn {
+        background: #00e5ff;
+        color: #000;
+        font-family: monospace;
+        font-size: 1rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        padding: 1rem 3rem;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+       
+        box-shadow: 0 0 30px rgba(0, 229, 255, 0.3);
+        transition: box-shadow 0.2s, transform 0.2s;
+    }
+
+        .start-overlay-btn:hover {
+            box-shadow: 0 0 40px rgba(0, 229, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+    /* ── Game Over ───────────────────────────────────────────────────────── */
+    .chain-gameover {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        text-align: center;
+        z-index: 20;
+        position: fixed; 
+        inset: 0; 
+        background: #0a0a1a; 
+        justify-content: center; 
+        padding: 2rem; 
+        overflow-y: auto;
+    }
+
+        .chain-gameover h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #00e5ff;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin: 0;
+            text-shadow: 0 0 30px rgba(0, 229, 255, 0.4);
+        }
+    /* ── High Score Banner ───────────────────────────────────────── */
+    .hs-banner {
+        width: 100%;
+        max-width: 480px;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        flex-direction: column;
+        gap: 4px;
+        text-align: center;
+    }
+
+    .hs-new {
+        background: rgba(255,214,0,0.06);
+        border: 1px solid rgba(255,214,0,0.3);
+        animation: hsPulse 1s ease-in-out infinite alternate;
+    }
+
+    .hs-existing {
+        background: rgba(0,229,255,0.04);
+        border: 1px solid rgba(0,229,255,0.12);
+    }
+
+    @@keyframes hsPulse {
+        from {
+            box-shadow: 0 0 8px rgba(255,214,0,0.1);
+        }
+
+        to {
+            box-shadow: 0 0 20px rgba(255,214,0,0.3);
+        }
+    }
+
+    .hs-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #ffd600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+
+    .hs-existing .hs-title {
+        color: #00e5ff;
+    }
+
+    .hs-sub {
+        font-size: 0.7rem;
+        color: #556677;
+        letter-spacing: 0.05em;
+    }
+
+    .go-stat-grid {
+        display: flex;
+        gap: 1px;
+        background: rgba(0, 229, 255, 0.1);
+        border-radius: 8px;
+        overflow: hidden;
+        width: 100%;
+        max-width: 540px;
+        border: 1px solid rgba(0, 229, 255, 0.15);
+    }
+
+    .go-stat-cell {
+        flex: 1;
+        background: #0a0a1a;
+        padding: 1.25rem 0.75rem;
+    }
+
+    .go-stat-val {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #00e5ff;
+    }
+
+    .go-stat-lbl {
+        font-size: 0.65rem;
+        color: #334455;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        margin-top: 4px;
+    }
+
+    .chain-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #00e5ff;
+        color: #000;
+        font-family: monospace;
+        font-size: 0.9rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        padding: 0.9rem 2.5rem;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        box-shadow: 0 0 20px rgba(0, 229, 255, 0.25);
+    }
+
+    .chain-btn-ghost {
+        background: transparent;
+        color: #00e5ff;
+        border: 1px solid rgba(0, 229, 255, 0.3);
+        box-shadow: none;
+    }
+
+    .saving-indicator {
+        font-size: 0.7rem;
+        color: #445566;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        min-height: 18px;
+    }
+
+        .saving-indicator.saved {
+            color: #00ff88;
+        }
+
+        .saving-indicator.error {
+            color: #ff4466;
+        }
+</style>
+
+<div class="chain-wrap">
+
+    <!-- ── START OVERLAY ─────────────────────────────────────────────────── -->
+    <div class="start-overlay" id="start-overlay">
+        <div class="start-overlay-title">⛓ Chain Mode</div>
+        <div class="start-overlay-sub">Link words. Keep the chain alive. Feel the beat.</div>
+
+        <div class="start-overlay-rules">
+            <div class="start-overlay-rule"><span>01 —</span> A word is shown — type it exactly and press Enter</div>
+            <div class="start-overlay-rule"><span>02 —</span> Next word starts with the last letter of the previous</div>
+            <div class="start-overlay-rule"><span>03 —</span> Press Enter close to the beat pulse for PERFECT</div>
+            <div class="start-overlay-rule"><span>04 —</span> Miss 3 times and the chain breaks forever</div>
+        </div>
+
+        <div class="start-overlay-example">
+            <span>APPLE</span> → <span>ECHO</span> → <span>ORBIT</span> → <span>TRUST</span>
+        </div>
+
+        <button class="start-overlay-btn" onclick="handleStart()">▶ Click to Start</button>
+    </div>
+    <!-- HUD -->
+    <div class="chain-hud">
+        <div class="hud-group">
+            <div class="hud-item">
+                <div class="hud-label">Score</div>
+                <div class="hud-value" id="hud-score">0</div>
+            </div>
+            <div class="hud-item">
+                <div class="hud-label">Chain</div>
+                <div class="hud-value" id="hud-chain">0</div>
+            </div>
+            <div class="hud-item">
+                <div class="hud-label">WPM</div>
+                <div class="hud-value" id="hud-wpm">0</div>
+            </div>
+            <div class="hud-item">
+                <div class="hud-label">BPM</div>
+                <div class="hud-value" id="hud-bpm">80</div>
+            </div>
+        </div>
+        <div class="chain-lives" id="lives-display"></div>
+        <button id="mute-btn" onclick="toggleMute()">🔊</button>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" style="display:flex; flex-direction:column; align-items:center; width:100%;">
+
+        <div class="chain-trail" id="chain-trail"></div>
+
+        <div class="chain-arena" id="chain-arena">
+            <div class="chain-prompt" id="chain-prompt">type this word</div>
+            <div class="chain-target-word" id="target-word">—</div>
+            <div class="chain-last-hint" id="last-hint"></div>
+            <div class="beat-bar-track">
+                <div class="beat-bar-fill" id="beat-bar"></div>
+            </div>
+        </div>
+
+        <div class="timing-zones">
+            <div class="zone zone-perfect">⬛ Perfect ±120ms</div>
+            <div class="zone zone-good">⬛ Good ±280ms</div>
+            <div class="zone zone-late">⬛ Late</div>
+        </div>
+
+        <input class="chain-input"
+               id="chain-input"
+               type="text"
+               autocomplete="off"
+               autocorrect="off"
+               autocapitalize="off"
+               spellcheck="false"
+               placeholder="TYPE HERE → ENTER" />
+
+        <div class="chain-feedback" id="feedback"></div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div class="chain-gameover" id="gameover-screen">
+        <h2>Chain Broken</h2>
+        <div class="go-stat-grid">
+            <div class="go-stat-cell"><div class="go-stat-val" id="go-score">0</div><div class="go-stat-lbl">Score</div></div>
+            <div class="go-stat-cell"><div class="go-stat-val" id="go-chain">0</div><div class="go-stat-lbl">Best Chain</div></div>
+            <div class="go-stat-cell"><div class="go-stat-val" id="go-wpm">0</div><div class="go-stat-lbl">Best WPM</div></div>
+            <div class="go-stat-cell"><div class="go-stat-val" id="go-words">0</div><div class="go-stat-lbl">Words</div></div>
+            <div class="go-stat-cell"><div class="go-stat-val" id="go-perfects">0</div><div class="go-stat-lbl">Perfects</div></div>
+        </div>
+
+        <div id="highscore-banner" class="hs-banner" style="display:none;">
+            <div id="hs-title" class="hs-title"></div>
+            <div id="hs-sub" class="hs-sub"></div>
+        </div>
+
+        <div class="saving-indicator" id="saving-indicator"></div>
+        <div style="display:flex; gap:1rem; flex-wrap:wrap; justify-content:center;">
+            <button class="chain-btn" onclick="restartGame()">&#9658; Play again</button>
+            <a class="chain-btn chain-btn-ghost" asp-action="Index">&#9632; Menu</a>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script src="~/js/chain-audio.js"></script>
+
+    <script>
+        // ── Word Dictionary ───────────────────────────────────────────────────────
+        const DICT = {
+            a: ["apple","ample","arch","acre","able","avid","amber","amble","among","angel","ankle","anvil","apart","arena","argue","arise","armor","arrow","aside","astir","atone","attic","audio","audit","avert","avail","awful","alert","alive","adept","ahead"],
+            b: ["brave","bond","bent","bust","buck","bolt","burn","bare","bind","bark","beam","beat","blot","blue","blur","boil","bold","boom","boon","brag","brim","brisk","brood","brook","brown","brush","build","bulge","bunch","burly","burst","birch","blaze","bleak","blend","bless","blind","bliss","block","bloom","blown","blunt"],
+            c: ["crisp","calm","cave","clip","cord","coil","curb","curt","case","cast","claw","clot","club","clue","coat","coax","coin","colt","comb","cone","cope","core","corn","cost","cozy","crag","cram","crew","crop","crow","cube","cuff","cusp","cyan","craft","creak","creed","creek","crest","crimp","cross","crowd","crown","crude","cruel","crush","crust"],
+            d: ["drive","dawn","deft","dusk","dart","dash","daze","dead","deal","dean","dear","debt","deck","deep","deem","dent","dire","disc","dish","diva","dive","dock","dole","dome","doom","dove","down","drab","drag","draw","drip","drop","drum","dual","dull","dump","dune","dwarf","daunt","debut","delay","delve"],
+            e: ["eager","echo","edge","emit","even","ever","etch","epic","each","earn","ease","east","edit","eight","elite","elope","elude","embed","empty","enact","endow","enjoy","ensue","enter","entry","envoy","equal","equip","erupt","essay","evoke","exact","exert","exile","exist","expel","extra","exult","evade","erode","erase","error","epoch","ethos"],
+            f: ["flame","flint","fuse","flux","fold","fond","fork","form","fray","free","fret","frog","fuel","full","fume","fizz","flag","flap","flat","flaw","flea","flip","flit","flog","flop","flow","foam","foil","folk","fool","foot","ford","fore","fort","foul","four","fowl","frost","frown","froze","fruit"],
+            g: ["grace","glow","gulp","gust","gaze","gear","gist","glee","glib","glob","gloom","gloss","glue","goal","goat","gone","gong","gore","gown","grab","gram","gray","grim","grin","grip","grit","grow","grub","gruff","grunt","gulf","gull","guru","graze","greed","green","greet","grief","grill","groan","groin","grove","growl"],
+            h: ["haste","halt","harp","heal","heap","heat","heft","helm","herb","herd","here","hide","high","hilt","hint","hire","hive","hold","hole","home","hone","hood","hook","hoop","hope","horn","hose","host","howl","huff","hulk","hull","hump","hunt","hurl","hurt","hush","hype","haven","hawk","haunt","harsh","hardy","handy","habit","humor","husky","humble"],
+            i: ["image","idle","itch","iris","icon","idea","igloo","irate","isle","into","inch","infer","inner","input","intro","issue","ivory","index","indie","inept","inert","ingot","inlet","inset","ionic","irony"],
+            j: ["jest","jump","jolt","jade","jail","jibe","jilt","jinx","jive","join","joke","josh","joust","judge","juice","juicy","jumpy","junta","juror","jetty","jiffy","jolly","jowl","jungle"],
+            k: ["knack","kneel","knelt","knife","knock","knoll","known","kudos","keel","keen","keep","kelp","kern","kick","kind","king","kink","kiss","knave","knead"],
+            l: ["light","lure","lurk","lash","laud","lava","lawn","lead","leaf","lean","leap","lend","lens","levy","lick","limp","lisp","list","live","loft","loin","loom","loop","lull","lung","lunge","lurch","lusty","lance","lapse","large","laser","later","lavish","layer","learn","least","leave","ledge","legal","lemon","level","liner","lingo","liver","local","lodge","logic","loyal","lucid","lucky","lunar"],
+            m: ["mirth","mist","moan","moat","mock","mode","molt","monk","mope","moss","muck","mule","mull","murk","muse","musk","march","marsh","mason","match","maxim","media","mercy","merge","merit","metal","meter","might","mimic","mince","minor","minus","model","money","month","moral","mount","mucus","muddy","musty","mystic"],
+            n: ["nerve","nest","newt","nick","node","norm","notch","nudge","null","numb","nadir","naive","nasal","naval","needy","nexus","night","ninja","noble","noise","noose","north","novel","nylon"],
+            o: ["orbit","omen","ooze","oval","oven","oath","oboe","odds","once","only","open","opus","orca","oral","order","other","ought","outer","overt","oxide","ozone"],
+            p: ["prism","plod","plot","plow","plug","plus","polo","pond","pore","port","pose","pour","pout","prey","prod","prop","prose","prowl","pull","pump","pure","plank","plane","plant","plate","plead","press","price","pride","prime","print","probe","prone","proof","proud","prove","prune","punch","pupil","purge"],
+            q: ["quaff","qualm","quash","queen","query","quest","queue","quill","quirk","quota","quote","quake","quart","quite"],
+            r: ["ridge","rift","ring","rink","riot","risk","rite","roam","roar","robe","rock","rogue","role","roll","romp","rook","root","rope","rose","rove","ruin","rule","rung","rush","rust","raze","ream","reap","reed","reef","reel","rein","rely","rend","rent","rest","revel","rider","ripen","rivet","round","rouse","route","rowdy","royal","ruddy","ruler","rural"],
+            s: ["swift","swam","swat","sway","syrup","sage","sail","sake","sale","sand","sane","save","scan","scar","scope","score","scout","seam","sect","seed","seep","self","send","shed","shin","shoe","shone","shook","shout","shove","shore","short","silk","silt","sire","size","skew","skid","skim","skin","skit","slap","slash","slim","slip","slug","slur","small","smash","smear","smoke","snail","snare","sniff","snore","solar","solve","stark","stern","stomp","stone","store","storm","style","surge","swarm","sweep"],
+            t: ["throb","thud","thug","tilt","time","toil","toll","tomb","tone","tool","tore","torn","toss","tote","tour","town","trace","track","trail","trait","tramp","trash","tread","treat","trend","trick","trim","trip","trot","true","trunk","trust","truth","tulip","tunic","turbo","tweak","twice","twist","tacit","taint","tally","talon","taper","taste","taunt","teach","tense","theft","thick","thing","think","thorn","three","throw","thumb","thump","title","touch","tough","towel","trial"],
+            u: ["ultra","undo","unit","urge","utter","ulcer","uncle","under","union","unite","unity","until","upper","upset","urban","usage","usher","usual","usurp"],
+            v: ["vivid","vale","vane","vast","vent","verb","vest","veto","vice","vile","vine","void","vote","valor","valve","vault","verge","verse","vigil","vigor","visor","vixen","vocal","voter","vulgar"],
+            w: ["wreck","writ","wane","ward","warn","warp","wary","wasp","wave","weld","well","whet","whim","whiz","wick","wide","wild","wile","wilt","wind","wine","wing","wink","wire","wise","wish","wisp","wolf","word","wore","work","worm","worn","wrap","wrath","wring","wrist","wrong"],
+            x: ["xenon","xeric"],
+            y: ["yearn","yield","young","yours","yodel","yummy","yacht","yawl","yelp"],
+            z: ["zebra","zeal","zero","zest","zinc","zone","zoom","zany","zilch","zippy"]
+        };
+
+        // ── Game State ────────────────────────────────────────────────────────────
+        const MAX_LIVES  = 3;
+        const TRAIL_MAX  = 6;
+        const WORD_BEATS = 4;
+
+        let lives, score, chain, bestChain, wordsChained, bestWpm, perfectHits;
+        let currentRequiredLetter;
+        let currentTargetWord;
+        let wordStartTime;
+        let wordBeatTimer;
+        let totalCharsTyped, totalTimeMs;
+        let gameActive = false;
+        let beatMs;
+        let trailWords = [];
+        let beatBarFrame = null;
+        let beatBarStart = null;
+        let beatBarDuration = 0;
+
+        // ── Helpers ───────────────────────────────────────────────────────────────
+        function toggleMute() {
+            const muted = ChainAudio.toggleMute();
+            document.getElementById('mute-btn').textContent = muted ? '🔇' : '🔊';
+        }
+
+        function getWordsFor(letter) {
+            return DICT[letter.toLowerCase()] ?? DICT['a'];
+        }
+
+        function lastLetter(word) {
+            return word[word.length - 1].toLowerCase();
+        }
+
+        function randomStartLetter() {
+            const letters = ['a','b','c','d','e','f','g','h','m','p','s','t','w'];
+            return letters[Math.floor(Math.random() * letters.length)];
+        }
+
+        function pickWord(letter) {
+            const pool = getWordsFor(letter);
+            return pool[Math.floor(Math.random() * pool.length)];
+        }
+
+        // ── Lives ─────────────────────────────────────────────────────────────────
+        function initLives() {
+            const el = document.getElementById('lives-display');
+            el.innerHTML = '';
+            for (let i = 0; i < MAX_LIVES; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'chain-life';
+                dot.id = 'life-' + i;
+                el.appendChild(dot);
+            }
+        }
+
+        function updateLives() {
+            for (let i = 0; i < MAX_LIVES; i++) {
+                document.getElementById('life-' + i)
+                        .classList.toggle('lost', i >= lives);
+            }
+        }
+
+        // ── HUD ───────────────────────────────────────────────────────────────────
+        function updateHud() {
+            document.getElementById('hud-score').textContent = score;
+            document.getElementById('hud-chain').textContent = chain;
+            document.getElementById('hud-bpm').textContent =
+                typeof ChainAudio !== 'undefined' ? ChainAudio.bpmForChain(chain) : 80;
+
+            const wpm = totalTimeMs > 0
+                ? Math.round((totalCharsTyped / 5) / (totalTimeMs / 60000))
+                : 0;
+            if (wpm > bestWpm) bestWpm = wpm;
+            document.getElementById('hud-wpm').textContent = wpm;
+        }
+
+        // ── Trail ─────────────────────────────────────────────────────────────────
+        function addToTrail(word) {
+            trailWords.push(word);
+            if (trailWords.length > TRAIL_MAX) trailWords.shift();
+
+            const el = document.getElementById('chain-trail');
+            el.innerHTML = '';
+            trailWords.forEach((w, i) => {
+                if (i > 0) {
+                    const arrow = document.createElement('span');
+                    arrow.className = 'chain-arrow';
+                    arrow.textContent = '→';
+                    el.appendChild(arrow);
+                }
+                const span = document.createElement('span');
+                span.className = 'chain-word' + (i === trailWords.length - 1 ? ' recent' : '');
+                span.textContent = w.toUpperCase();
+                el.appendChild(span);
+            });
+        }
+
+        // ── Feedback ──────────────────────────────────────────────────────────────
+        function showFeedback(type, text) {
+            const el = document.getElementById('feedback');
+            el.textContent = text;
+            el.className = 'chain-feedback show ' + type;
+            clearTimeout(el._timer);
+            el._timer = setTimeout(() => el.classList.remove('show'), 900);
+        }
+
+        // ── Beat Bar ──────────────────────────────────────────────────────────────
+        function startBeatBar(duration) {
+            beatBarDuration = duration;
+            beatBarStart    = performance.now();
+            cancelAnimationFrame(beatBarFrame);
+
+            function animate() {
+                const elapsed   = performance.now() - beatBarStart;
+                const remaining = Math.max(0, 1 - elapsed / beatBarDuration);
+                const bar       = document.getElementById('beat-bar');
+                if (bar) {
+                    bar.style.width = (remaining * 100) + '%';
+                    if (remaining > 0.5)      bar.style.background = '#00e5ff';
+                    else if (remaining > 0.2) bar.style.background = '#ffd600';
+                    else                      bar.style.background = '#ff4466';
+                }
+                if (remaining > 0 && gameActive) {
+                    beatBarFrame = requestAnimationFrame(animate);
+                }
+            }
+            beatBarFrame = requestAnimationFrame(animate);
+        }
+
+        // ── Arena Beat Pulse ──────────────────────────────────────────────────────
+        function onBeat() {
+            const arena = document.getElementById('chain-arena');
+            if (!arena || !gameActive) return;
+            arena.classList.remove('beat-pulse');
+            void arena.offsetWidth;
+            arena.classList.add('beat-pulse');
+        }
+
+        // ── Next Round ────────────────────────────────────────────────────────────
+        function nextRound(requiredLetter) {
+            if (!gameActive) return;
+
+            clearTimeout(wordBeatTimer);
+            cancelAnimationFrame(beatBarFrame);
+
+            currentRequiredLetter = requiredLetter ?? randomStartLetter();
+            currentTargetWord     = pickWord(currentRequiredLetter);
+
+            document.getElementById('chain-prompt').textContent = 'type this word';
+            document.getElementById('target-word').textContent  = currentTargetWord.toUpperCase();
+
+            const hint = document.getElementById('last-hint');
+            if (trailWords.length > 0) {
+                const prev = trailWords[trailWords.length - 1];
+                hint.innerHTML = `ends with <span>${lastLetter(prev).toUpperCase()}</span> → starts with <span>${currentRequiredLetter.toUpperCase()}</span>`;
+            } else {
+                hint.innerHTML = '';
+            }
+
+            document.getElementById('chain-input').value = '';
+            document.getElementById('chain-input').className = 'chain-input';
+
+            wordStartTime = performance.now();
+            beatMs = ChainAudio.beatIntervalMs();
+            if (!beatMs || beatMs <= 0 || isNaN(beatMs)) beatMs = 750;
+
+            const windowMs = beatMs * WORD_BEATS;
+            startBeatBar(windowMs);
+
+            wordBeatTimer = setTimeout(() => {
+                if (gameActive) missRound('⏱ Too slow!');
+            }, windowMs);
+        }
+
+        // ── Miss Round ────────────────────────────────────────────────────────────
+        function missRound(reason = 'MISS') {
+            lives--;
+            chain = 0;
+            updateLives();
+            showFeedback('miss', reason);
+            ChainAudio.playMiss();
+            ChainAudio.updateBpm(0);
+            document.getElementById('chain-input').value = '';
+
+            if (lives <= 0) {
+                endGame();
+            } else {
+                setTimeout(() => nextRound(randomStartLetter()), 900);
+            }
+        }
+
+        // ── Submit Word ───────────────────────────────────────────────────────────
+        function submitWord() {
+            if (!gameActive || !currentTargetWord) return;
+
+            const input = document.getElementById('chain-input');
+            const typed = input.value.trim().toLowerCase();
+
+            if (!typed) return;
+
+            if (typed !== currentTargetWord.toLowerCase()) {
+                showFeedback('wrong', `Type "${currentTargetWord.toUpperCase()}"`);
+                input.classList.add('invalid');
+                setTimeout(() => input.classList.remove('invalid'), 300);
+                return;
+            }
+
+            clearTimeout(wordBeatTimer);
+            cancelAnimationFrame(beatBarFrame);
+
+            const timing     = ChainAudio.judgeTiming();
+            const reactionMs = performance.now() - wordStartTime;
+
+            totalCharsTyped += typed.length;
+            totalTimeMs     += reactionMs;
+
+            const basePoints  = typed.length * 10;
+            const chainBonus  = chain * 3;
+            const timingBonus = { perfect: 20, good: 10, late: 3, miss: 0 }[timing] ?? 0;
+            const gained      = basePoints + chainBonus + timingBonus;
+
+            score += gained;
+            chain++;
+            wordsChained++;
+            if (chain > bestChain) bestChain = chain;
+            if (timing === 'perfect') perfectHits++;
+
+            const feedbackMap = {
+                perfect: `🎯 PERFECT +${gained}`,
+                good:    `✅ GOOD +${gained}`,
+                late:    `⚡ LATE +${gained}`,
+                miss:    `+${gained}`
+            };
+            showFeedback(timing, feedbackMap[timing]);
+
+            ChainAudio.playHit(timing);
+            ChainAudio.updateBpm(chain);
+            addToTrail(typed);
+            updateHud();
+
+            const next = lastLetter(typed);
+            setTimeout(() => nextRound(next), 400);
+        }
+
+        // ── End Game ──────────────────────────────────────────────────────────────
+        function endGame() {
+            gameActive = false;
+            clearTimeout(wordBeatTimer);
+            cancelAnimationFrame(beatBarFrame);
+
+            ChainAudio.stop();
+            ChainAudio.playGameOver();
+
+            document.getElementById('game-screen').style.display    = 'none';
+            document.getElementById('gameover-screen').style.display = 'flex';
+
+            document.getElementById('go-score').textContent    = score;
+            document.getElementById('go-chain').textContent    = bestChain;
+            document.getElementById('go-wpm').textContent      = bestWpm;
+            document.getElementById('go-words').textContent    = wordsChained;
+            document.getElementById('go-perfects').textContent = perfectHits;
+
+            saveScore();
+        }
+
+        // ── Save Score ────────────────────────────────────────────────────────────
+                async function saveScore() {
+            const indicator = document.getElementById('saving-indicator');
+            indicator.textContent = 'Saving...';
+            indicator.className   = 'saving-indicator';
+
+            try {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+
+                const res = await fetch('/ChainMode/SaveScore', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify({
+                        score:        score,
+                        bestChain:    bestChain,
+                        wordsChained: wordsChained,
+                        bestWpm:      bestWpm,
+                        perfectHits:  perfectHits
+                    })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    indicator.textContent = '✓ Saved';
+                    indicator.className   = 'saving-indicator saved';
+                    showHighScoreBanner(data.isNewHighScore, data.previousBest, data.currentScore);
+                } else {
+                    throw new Error();
+                }
+            } catch {
+                indicator.textContent = '✗ Could not save';
+                indicator.className   = 'saving-indicator error';
+            }
+        }
+
+        function showHighScoreBanner(isNew, previousBest, currentScore) {
+            const banner = document.getElementById('highscore-banner');
+            const title  = document.getElementById('hs-title');
+            const sub    = document.getElementById('hs-sub');
+
+            if (isNew) {
+                banner.className = 'hs-banner hs-new';
+                title.textContent = '🏆 New High Score!';
+                sub.textContent   = previousBest > 0
+                    ? `Previous best: ${previousBest.toLocaleString()} — you beat it!`
+                    : 'First score on the board!';
+            } else if (previousBest > 0) {
+                banner.className = 'hs-banner hs-existing';
+                title.textContent = `🏆 Best: ${previousBest.toLocaleString()} pts`;
+                sub.textContent   = `${(previousBest - currentScore + 1).toLocaleString()} more needed to beat your record`;
+            } else {
+                banner.className = 'hs-banner hs-existing';
+                title.textContent = '🏆 Score Saved!';
+                sub.textContent   = 'Play again to set a record';
+            }
+
+            banner.style.display = 'flex';
+        }
+
+        // ── Start Game ────────────────────────────────────────────────────────────
+        function startGame() {
+            lives           = MAX_LIVES;
+            score           = 0;
+            chain           = 0;
+            bestChain       = 0;
+            wordsChained    = 0;
+            bestWpm         = 0;
+            perfectHits     = 0;
+            totalCharsTyped = 0;
+            totalTimeMs     = 0;
+            trailWords      = [];
+            gameActive      = true;
+            currentTargetWord = null;
+
+            document.getElementById('game-screen').style.display    = 'flex';
+            document.getElementById('gameover-screen').style.display = 'none';
+            document.getElementById('chain-trail').innerHTML        = '';
+            document.getElementById('chain-input').value           = '';
+            document.getElementById('target-word').textContent     = '—';
+            document.getElementById('last-hint').innerHTML         = '';
+            document.getElementById('feedback').className          = 'chain-feedback';
+
+            initLives();
+            updateHud();
+        }
+
+        // ── Handle Start ──────────────────────────────────────────────────────────
+        function handleStart() {
+            const overlay = document.getElementById('start-overlay');
+            if (overlay) overlay.style.display = 'none';
+
+            ChainAudio.playStart();
+            ChainAudio.start(0, onBeat);
+
+            document.getElementById('chain-input').focus();
+            setTimeout(() => nextRound(randomStartLetter()), 800);
+        }
+
+        // ── Restart Game ──────────────────────────────────────────────────────────
+        function restartGame() {
+            ChainAudio.stop();
+            startGame();
+            const overlay = document.getElementById('start-overlay');
+            if (overlay) overlay.style.display = 'flex';
+        }
+
+        // ── Input Listeners ───────────────────────────────────────────────────────
+        document.getElementById('chain-input').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                submitWord();
+            }
+        });
+
+        document.getElementById('chain-input').addEventListener('input', function () {
+            if (!gameActive || !currentTargetWord) return;
+
+            const typed  = this.value.trim().toLowerCase();
+            const target = currentTargetWord.toLowerCase();
+
+            if (!typed) {
+                this.className = 'chain-input';
+                return;
+            }
+
+            this.className = 'chain-input ' + (target.startsWith(typed) ? 'valid' : 'invalid');
+        });
+
+        // ── Init ──────────────────────────────────────────────────────────────────
+        startGame();
+    </script>
+}

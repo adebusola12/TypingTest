@@ -1,0 +1,234 @@
+﻿@model TypingTest.ViewModels.UserStatsViewModel
+@{
+    ViewData["Title"] = "Home";
+}
+
+@section Styles {
+    <style>
+        .hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 5rem 1rem 3rem;
+        }
+
+        .hero-eyebrow {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+            opacity: 0;
+            animation: fadeUp 0.6s ease 0.2s forwards;
+        }
+
+        .hero-title {
+            font-family: var(--font-display);
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            font-weight: 900;
+            letter-spacing: 4px;
+            line-height: 1;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+            opacity: 0;
+            animation: fadeUp 0.6s ease 0.4s forwards;
+        }
+
+        .hero-title span {
+            display: block;
+            color: var(--accent);
+            text-shadow: 0 0 40px rgba(0,212,255,0.4);
+        }
+
+        .hero-sub {
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            color: var(--text2);
+            max-width: 500px;
+            margin-bottom: 2.5rem;
+            opacity: 0;
+            animation: fadeUp 0.6s ease 0.6s forwards;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            opacity: 0;
+            animation: fadeUp 0.6s ease 0.8s forwards;
+        }
+
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            margin-top: 4rem;
+            width: 100%;
+            max-width: 600px;
+            opacity: 0;
+            animation: fadeUp 0.6s ease 1s forwards;
+        }
+
+        .hero-stat {
+            background: var(--surface);
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .hero-stat-val {
+            font-family: var(--font-display);
+            font-size: 1.75rem;
+            font-weight: 900;
+            color: var(--accent);
+        }
+
+        .hero-stat-lbl {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text3);
+            margin-top: 4px;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1rem;
+            margin-top: 4rem;
+        }
+
+        .feature-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: border-color 0.2s, transform 0.2s;
+        }
+
+        .feature-card.visible { opacity: 1; transform: translateY(0); }
+        .feature-card:hover { border-color: var(--accent); }
+
+        .feature-icon {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-title {
+            font-family: var(--font-display);
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-desc {
+            font-size: 0.875rem;
+            color: var(--text2);
+            line-height: 1.6;
+        }
+
+        @@keyframes fadeUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to   { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+}
+
+<div class="hero">
+    <p class="hero-eyebrow">The ultimate typing experience</p>
+
+    <h1 class="hero-title">
+        Train Your
+        <span>Keystrokes</span>
+    </h1
+    @if (User.Identity?.IsAuthenticated == true && Model != null)
+{
+    <p class="hero-welcome">Welcome back, <span>@Model.DisplayName</span></p>
+}
+
+    <p class="hero-sub">
+        Measure your WPM, crush the leaderboard, and forge your typing skills one keystroke at a time.
+    </p>
+
+    <div class="hero-actions">
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <a asp-controller="Test" asp-action="Index" class="btn btn-primary btn-lg">▶ Start Typing</a>
+            <a asp-controller="Account" asp-action="Profile" class="btn btn-secondary btn-lg">◉ My Profile</a>
+        }
+        else
+        {
+            <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-primary btn-lg">▶ Get Started</a>
+            <a asp-controller="Leaderboard" asp-action="Index" class="btn btn-secondary btn-lg">◈ Leaderboard</a>
+        }
+    </div>
+
+    @if (User.Identity?.IsAuthenticated == true && Model != null)
+    {
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <div class="hero-stat-val">@Model.BestWpm</div>
+                <div class="hero-stat-lbl">Best WPM</div>
+            </div>
+            <div class="hero-stat">
+                <div class="hero-stat-val">@Model.AverageAccuracyDisplay</div>
+                <div class="hero-stat-lbl">Avg Accuracy</div>
+            </div>
+            <div class="hero-stat">
+                <div class="hero-stat-val">@Model.TotalTestsTaken</div>
+                <div class="hero-stat-lbl">Tests Taken</div>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="features">
+    <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-title">Live WPM Tracking</div>
+        <p class="feature-desc">Watch your words per minute update in real time as you type. No waiting, instant feedback.</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">🎯</div>
+        <div class="feature-title">Accuracy Scoring</div>
+        <p class="feature-desc">Every keystroke tracked. Get a precise breakdown of your accuracy and error count after each test.</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">◈</div>
+        <div class="feature-title">Global Leaderboard</div>
+        <p class="feature-desc">Compete against typists worldwide. Filter by difficulty and mode to find your true rank.</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">⚙</div>
+        <div class="feature-title">Multiple Modes</div>
+        <p class="feature-desc">Race against the clock in timed mode, or hit a word count target at your own pace.</p>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Animate feature cards on scroll
+        const cards = document.querySelectorAll('.feature-card');
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach((e, i) => {
+                if (e.isIntersecting) {
+                    setTimeout(() => e.target.classList.add('visible'), i * 100);
+                }
+            });
+        }, { threshold: 0.1 });
+        cards.forEach(c => observer.observe(c));
+    </script>
+}
